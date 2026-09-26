@@ -1,0 +1,6 @@
+export { OperatorTours } from '@/pages/operator/tours/ToursBoard'
+export { OperatorCustomers } from '@/pages/operator/customers/CustomersBoard'
+export { OperatorVendors } from '@/pages/operator/vendors/VendorsBoard'
+export { OperatorCoordinators } from '@/pages/operator/coordinators/CoordinatorsBoard'
+export { OperatorBookings } from '@/pages/operator/bookings/BookingsBoard'
+export { OperatorGroups } from '@/pages/operator/groups/GroupsBoard'
