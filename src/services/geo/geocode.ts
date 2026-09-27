@@ -66,8 +66,10 @@ export async function geocodeLocation(query: string): Promise<GeoPoint | null> {
     const point = fromHit(hit)
     if (!inIndia(point) || (cityPin && haversineMeters(point, cityPin) > 90_000)) {
       const fallback = seed ?? cityPin
-      cacheSet(cacheKey, { ...fallback, source: 'seed' }, TTL.geocode)
-      return { ...fallback, source: 'seed' }
+      if (!fallback) return null
+      const pinned = { ...fallback, source: 'seed' as const }
+      cacheSet(cacheKey, pinned, TTL.geocode)
+      return pinned
     }
     cacheSet(cacheKey, point, TTL.geocode)
     return point

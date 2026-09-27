@@ -62,7 +62,7 @@ export function useWeatherTwin(trip: Trip | undefined) {
       precipitationMm: 0.2,
       windKmh: 12,
       humidity: 70,
-      source: 'demo',
+      source: 'catalog',
     }),
   )
 

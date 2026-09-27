@@ -32,7 +32,7 @@ export interface PlaceResult {
   website?: string
   openingHours?: string
   images: string[]
-  source: 'live' | 'demo'
+  source: 'live' | 'catalog'
 }
 
 export interface WeatherNow {
@@ -43,7 +43,7 @@ export interface WeatherNow {
   precipitationMm: number
   windKmh: number
   humidity: number
-  source: 'live' | 'demo'
+  source: 'live' | 'catalog'
 }
 
 export interface WeatherHour {

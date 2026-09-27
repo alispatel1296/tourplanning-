@@ -8,7 +8,7 @@ export interface FxQuote {
   amount: number
   converted: number
   timestamp: string
-  source: 'live' | 'demo'
+  source: 'live' | 'catalog'
 }
 
 interface OpenEr {
@@ -52,7 +52,7 @@ export async function convertCurrency(amount: number, from = 'INR', to = 'USD'):
       amount,
       converted: Math.round(amount * rate * 100) / 100,
       timestamp: new Date().toISOString(),
-      source: 'demo',
+      source: 'catalog',
     }
   }
 }

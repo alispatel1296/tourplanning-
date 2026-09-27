@@ -8,7 +8,7 @@ export interface HotelAvailability {
   roomsLeft?: number
   nightlyFrom?: number
   currency: 'INR'
-  source: 'live' | 'demo'
+  source: 'live' | 'catalog'
 }
 
 export async function searchHotels(near: string): Promise<PlaceResult[]> {
@@ -40,7 +40,7 @@ export async function getHotelDetails(id: string, fallback?: PlaceResult) {
   return getPlaceDetails(id, fallback)
 }
 
-/** No approved booking API is configured. Always labeled demo availability. */
+/** No approved booking API is configured. Availability is catalog-estimated. */
 export async function checkHotelAvailability(hotelId: string, nightlyHint?: number): Promise<HotelAvailability> {
   return {
     hotelId,
@@ -48,6 +48,6 @@ export async function checkHotelAvailability(hotelId: string, nightlyHint?: numb
     roomsLeft: 4,
     nightlyFrom: nightlyHint,
     currency: 'INR',
-    source: 'demo',
+    source: 'catalog',
   }
 }

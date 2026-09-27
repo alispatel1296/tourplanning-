@@ -31,7 +31,7 @@ function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const nextPath = params.get('next')
-  const demoHint = params.get('demo')
+  const roleHint = params.get('role') ?? params.get('demo')
   const [preparing, setPreparing] = useState(false)
 
   const enter = (next: AuthRole, profile?: { name?: string; email?: string }) => {
@@ -47,7 +47,7 @@ function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         {preparing ? (
           <PreparingState nextPath={nextPath} />
         ) : mode === 'login' ? (
-          <LoginForm onEnter={enter} demoHint={demoHint} />
+          <LoginForm onEnter={enter} roleHint={roleHint} />
         ) : (
           <SignupForm onEnter={enter} />
         )}
@@ -76,12 +76,12 @@ function PreparingState({ nextPath }: { nextPath: string | null }) {
 
 function LoginForm({
   onEnter,
-  demoHint,
+  roleHint,
 }: {
   onEnter: (role: AuthRole, profile?: { name?: string; email?: string }) => void
-  demoHint: string | null
+  roleHint: string | null
 }) {
-  const intent = demoHint === 'operator' || demoHint === 'traveler' ? demoHint : null
+  const intent = roleHint === 'operator' || roleHint === 'traveler' ? roleHint : null
   return (
     <div className="w-full max-w-md">
       <div className="lg:hidden">

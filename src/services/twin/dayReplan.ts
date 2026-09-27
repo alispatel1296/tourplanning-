@@ -253,7 +253,7 @@ export function composeDayReplan(trip: Trip, snapshot: TwinSnapshot | null, forc
     headline,
     summary: live
       ? `Open-Meteo on the ${city} cell crossed the operating band. Outdoor hops from Day ${fromDay} move indoors. Bookings stay put until you apply.`
-      : `Live rain is inside the band, so the twin seeds the ${city} high-rain corridor. Apply to see the same day-from replan you would get in a wet cell.`,
+      : `Live rain is inside the band, so the twin opens the ${city} high-rain corridor. Apply to see the same day-from replan you would get in a wet cell.`,
     changes,
     plannedBefore,
     plannedAfter,
@@ -261,13 +261,13 @@ export function composeDayReplan(trip: Trip, snapshot: TwinSnapshot | null, forc
     remainingAfter,
     triggerTitle: trigger.title,
     confidence: live ? Math.min(0.92, 0.62 + (snapshot?.system.confidence ?? 0.2) * 0.3) : 0.71,
-    source: live ? 'Open-Meteo + itinerary DAG' : 'Seeded rain corridor · same rules as live',
+    source: live ? 'Open-Meteo + itinerary DAG' : 'High-rain corridor · same rules as live',
     explanations: [
       {
         title: 'Why this fired',
         body: live
           ? `${rainUsed.toFixed(1)} mm/h rain, flood index ${Math.round(floodUsed)}, storm ${storm} h on the ${city} weather cell. Outdoor P(disrupt) ${Math.round((triggerEntity?.pDisrupt ?? 0.55) * 100)}%.`
-          : `${city} is a known outdoor exposure (${trigger.title}). The seeded cell is 12 mm/h rain / flood 58 — the same thresholds the live twin uses.`,
+          : `${city} is a known outdoor exposure (${trigger.title}). The high-rain cell is 12 mm/h rain / flood 58 — the same thresholds the live twin uses.`,
       },
       {
         title: 'Why we replan from this day',

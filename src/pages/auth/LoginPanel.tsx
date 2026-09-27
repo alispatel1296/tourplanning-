@@ -56,9 +56,9 @@ export function LoginPanel({
     <div className={cn('w-full', compact ? '' : 'max-w-md')}>
       <p className="text-sm text-slate-600">
         {intent === 'operator'
-          ? 'Sign in to open the operator desk, or use a demo login below.'
+          ? 'Sign in to open the operator desk, or continue as Operator below.'
           : intent === 'traveler'
-            ? 'Sign in to plan a journey, or use a demo login below.'
+            ? 'Sign in to plan a journey, or continue as User below.'
             : 'Sign in to your traveler or operator workspace.'}
       </p>
 
@@ -79,7 +79,7 @@ export function LoginPanel({
             >
               <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
                 {isUser ? <UserRound className="h-3.5 w-3.5" /> : <Building2 className="h-3.5 w-3.5" />}
-                Demo login · {isUser ? 'User' : 'Operator'}
+                Continue as {isUser ? 'User' : 'Operator'}
               </p>
               <p className="mt-1 text-sm font-semibold text-[var(--color-charcoal)]">{account.name}</p>
               <p className="text-[12px] text-slate-500">{account.email}</p>

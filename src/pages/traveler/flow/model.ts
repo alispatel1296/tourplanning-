@@ -52,7 +52,7 @@ export function fallbackNodes(trip: Trip): TripNode[] {
       category: 'transport',
       status: 'upcoming',
       cost: 4200,
-      notes: 'Seeded so the canvas is never empty.',
+      notes: 'Starter stop so the canvas is never empty.',
     },
     {
       id: `${trip.id}-b`,
@@ -64,7 +64,7 @@ export function fallbackNodes(trip: Trip): TripNode[] {
       category: 'stay',
       status: 'upcoming',
       cost: 8000,
-      notes: 'Generate a full itinerary to replace this seed graph.',
+      notes: 'Generate a full itinerary to replace this starter graph.',
     },
     {
       id: `${trip.id}-c`,

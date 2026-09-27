@@ -76,7 +76,7 @@ export function AbnormalityReplanPanel({
           <h3 className="mt-1 font-display text-xl text-ink">{proposal.headline}</h3>
           <p className="mt-1 max-w-2xl text-sm text-slate-600">{proposal.summary}</p>
         </div>
-        <Badge tone={proposal.live ? 'danger' : 'warning'}>{proposal.live ? 'Live cell' : 'Seeded corridor'}</Badge>
+        <Badge tone={proposal.live ? 'danger' : 'warning'}>{proposal.live ? 'Live cell' : 'High-rain corridor'}</Badge>
       </div>
 
       <div className={cn('mt-4 grid gap-3', compact ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-4')}>

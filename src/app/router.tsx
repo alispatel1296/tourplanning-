@@ -100,8 +100,8 @@ function RequireRole({ allow }: { allow: Role[] }) {
 
   if (!fieldRole && !role) {
     const next = encodeURIComponent(location.pathname + location.search)
-    const demo = allow.includes('operator') ? 'operator' : 'traveler'
-    return <Navigate to={`/login?next=${next}&demo=${demo}`} replace />
+    const asRole = allow.includes('operator') ? 'operator' : 'traveler'
+    return <Navigate to={`/login?next=${next}&role=${asRole}`} replace />
   }
 
   if (!fieldRole && role && !allow.includes(role)) {
