@@ -71,6 +71,20 @@ const INDOOR_SWAPS: IndoorSwap[] = [
     notes: 'Valley rain hold. Open meadows and gondola wait until the cell clears.',
   },
   {
+    match: /fontainhas|old goa|panaji|latin quarter/i,
+    title: 'Covered Old Goa museum + Fontainhas cafe',
+    cost: 500,
+    category: 'activity',
+    notes: 'Basilica interiors and a covered cafe. Latin Quarter walk waits for a dry hour.',
+  },
+  {
+    match: /palolem|beach day|spa/i,
+    title: 'Indoor spa + hotel lounge day',
+    cost: 2800,
+    category: 'activity',
+    notes: 'Keep the booked spa. Drop the open-beach block while the cell is wet.',
+  },
+  {
     match: /amer|hawa mahal|jal mahal|fort|zipline|garden|fateh sagar|jag mandir|viewpoint|aguada/i,
     title: 'Covered haveli / museum walk',
     cost: 600,
@@ -104,8 +118,10 @@ function outdoorCandidates(trip: Trip) {
       !node.id.startsWith('replan-') &&
       !/indoor|covered|kahwa|cooking class|museum|cafe \+|haveli/i.test(node.title) &&
       (isOutdoorNode(node) ||
-        (node.category === 'activity' &&
-          /fort|garden|lake|beach|trek|walk|viewpoint|palace|zipline|gondola/i.test(`${node.title} ${node.notes}`))),
+        ((node.category === 'activity' || node.category === 'free') &&
+          /fort|garden|lake|beach|trek|walk|viewpoint|palace|zipline|gondola|fontainhas|palolem/i.test(
+            `${node.title} ${node.notes} ${node.city}`,
+          ))),
   )
 }
 
@@ -150,9 +166,11 @@ export function composeDayReplan(trip: Trip, snapshot: TwinSnapshot | null, forc
 
   const outdoor = outdoorCandidates(trip)
   const triggerEntity = stressed.sort((a, b) => b.pDisrupt - a.pDisrupt)[0]
+  const showcase = outdoor.find((node) => /baga water|water sports/i.test(node.title))
   const trigger =
+    showcase ??
     outdoor.find((node) => node.id === triggerEntity?.nodeId) ??
-    outdoor.find((node) => /baga|beach|gondola|amer|juhu|water/i.test(`${node.title} ${node.city}`)) ??
+    outdoor.find((node) => /gondola|amer|juhu|beach/i.test(`${node.title} ${node.city}`)) ??
     outdoor[0]
   if (!trigger) return null
 
@@ -164,7 +182,7 @@ export function composeDayReplan(trip: Trip, snapshot: TwinSnapshot | null, forc
   const floodUsed = live ? flood : Math.max(flood, 58)
 
   const hits = outdoor.filter((node) => node.day >= fromDay)
-  const changes: ReplanChange[] = hits.slice(0, 4).map((node) => {
+  const changes: ReplanChange[] = hits.slice(0, 6).map((node) => {
     const swap = swapFor(node)
     const next = replacementNode(node, swap)
     const budgetDelta = next.cost - node.cost

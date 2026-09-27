@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   Map as MapIcon,
   Orbit,
+  PanelLeft,
+  PanelLeftClose,
   Radio,
   ShieldAlert,
   Sparkles,
@@ -46,11 +48,31 @@ export function TravelerShell() {
   const { user, toasts, dismissToast, trips } = useAppState()
   const live = usePrimaryTrip()
   const [palette, setPalette] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      return localStorage.getItem('tf-sidebar-collapsed') !== '1'
+    } catch {
+      return true
+    }
+  })
+
+  const toggleSidebar = () => {
+    setSidebarOpen((open) => {
+      const next = !open
+      try {
+        localStorage.setItem('tf-sidebar-collapsed', next ? '0' : '1')
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
+  }
   const navigate = useNavigate()
   const unread = useInboxUnread('traveler')
-  const liveTo = live?.id ? `/traveler/live/${live.id}` : '/traveler/live/trip-amd-goa'
-  const twinTo = live?.id ? `/traveler/twin/${live.id}` : '/traveler/twin/trip-amd-goa'
-  const predictTo = live?.id ? `/traveler/predict/${live.id}` : '/traveler/predict/trip-amd-goa'
+  const showcase = trips.find((item) => item.id === 'trip-amd-goa') ?? live
+  const liveTo = showcase?.id ? `/traveler/live/${showcase.id}` : '/traveler/live/trip-amd-goa'
+  const twinTo = showcase?.id ? `/traveler/twin/${showcase.id}` : '/traveler/twin/trip-amd-goa'
+  const predictTo = showcase?.id ? `/traveler/predict/${showcase.id}` : '/traveler/predict/trip-amd-goa'
 
   const items = nav.map((item) =>
     item.label === 'Live'
@@ -112,11 +134,20 @@ export function TravelerShell() {
   )
 
   return (
-    <div className="min-h-screen bg-[var(--color-warm-ivory)] lg:flex">
+    <div
+      className="min-h-screen bg-[var(--color-warm-ivory)] lg:flex"
+      data-sidebar-collapsed={sidebarOpen ? 'false' : 'true'}
+    >
       <ScrollToTop />
 
+      {sidebarOpen ? (
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-white px-4 py-5 lg:flex">
-        <Brand />
+        <div className="flex items-start justify-between gap-2">
+          <Brand />
+          <IconButton label="Hide sidebar" onClick={toggleSidebar}>
+            <PanelLeftClose className="h-4 w-4" />
+          </IconButton>
+        </div>
         <div className="mt-8 flex-1 overflow-y-auto">{links}</div>
         <button type="button" onClick={() => navigate('/traveler/profile')} className="mt-4 flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-slate-50">
           <Avatar initials={user?.avatarInitials ?? 'AS'} name={user?.name} className="h-9 w-9 bg-[var(--color-ocean)] text-white" />
@@ -126,22 +157,22 @@ export function TravelerShell() {
           </span>
         </button>
       </aside>
+      ) : null}
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-white/90 px-4 py-3 backdrop-blur lg:px-8">
-          <div className="lg:hidden">
-            <Brand compact />
+          <div className="flex items-center gap-3">
+            {!sidebarOpen ? (
+              <IconButton label="Show sidebar" className="hidden lg:inline-flex" onClick={toggleSidebar}>
+                <PanelLeft className="h-4 w-4" />
+              </IconButton>
+            ) : null}
+            <div className="lg:hidden">
+              <Brand compact />
+            </div>
+            <p className="hidden text-sm font-medium text-slate-500 lg:block">TripFlow traveler workspace</p>
           </div>
-          <p className="hidden text-sm font-medium text-slate-500 lg:block">TripFlow traveler workspace</p>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPalette(true)}
-              className="flex items-center gap-2 rounded-full bg-[var(--color-charcoal)] px-4 py-2 text-sm font-semibold text-white"
-            >
-              <Sparkles className="h-4 w-4 text-[var(--color-muted-gold)]" />
-              <span className="hidden sm:inline">AI Concierge</span>
-            </button>
             <IconButton label="Notifications" onClick={() => navigate('/traveler/notifications')}>
               <span className="relative">
                 <Bell className="h-5 w-5" />

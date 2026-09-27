@@ -518,7 +518,10 @@ export function PlanTrip() {
 
         @media (min-width: 1024px) {
           .plan-footer {
-            left: 240px; /* offset sidebar */
+            left: 240px;
+          }
+          [data-sidebar-collapsed="true"] .plan-footer {
+            left: 0;
           }
           .plan-voice-fab {
             bottom: 96px; /* Place above the sticky footer */

@@ -95,6 +95,7 @@ interface AppStateValue {
   markNodeVisited: (tripId: string, nodeId: string) => void
   applyLiveReroute: (tripId: string, targetId: string, mode: 'stage' | 'accept') => void
   applyDayReplan: (tripId: string, proposal: ReplanProposal) => void
+  resetDayReplan: (tripId: string) => void
   keepLivePlan: (tripId: string) => void
   completeTrip: (tripId: string) => void
   resetDemoJourney: () => void
@@ -169,13 +170,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [session])
 
   useEffect(() => {
-    const primary = trips.find((trip) => trip.id === (activeTripId ?? 'trip-amd-goa')) ?? trips[0]
-    if (!primary) return
+    const westCoast = trips.find((trip) => trip.id === 'trip-amd-goa')
+    if (!westCoast) return
     const current = readLiveMirror()
-    const indoorLive = primary.nodes.some(
+    const indoorLive = westCoast.nodes.some(
       (node) => node.id === INDOOR_ALT_ID && (node.status === 'active' || node.status === 'visited'),
     )
-    const staged = primary.nodes.some((node) => node.status === 'disrupted')
+    const staged = westCoast.nodes.some((node) => node.status === 'disrupted')
     const disruption =
       current.disruption === 'approved' && indoorLive
         ? 'approved'
@@ -184,8 +185,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           : staged
             ? 'staged'
             : 'idle'
-    writeLiveMirror({ nodes: primary.nodes, spent: primary.spent, disruption, tripStatus: primary.status })
-  }, [trips, activeTripId])
+    writeLiveMirror({ nodes: westCoast.nodes, spent: westCoast.spent, disruption, tripStatus: westCoast.status })
+  }, [trips])
 
   const dismissToast = useCallback((id: string) => {
     setToasts((current) => current.filter((toast) => toast.id !== id))
@@ -489,6 +490,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [pushToast],
   )
 
+  const resetDayReplan = useCallback((tripId: string) => {
+    setTrips((current) =>
+      current.map((trip) => {
+        if (trip.id !== tripId) return trip
+        const nodes = trip.nodes
+          .filter((node) => !node.id.startsWith('replan-'))
+          .map((node) =>
+            node.status === 'disrupted'
+              ? { ...node, status: trip.status === 'live' ? ('upcoming' as const) : node.status === 'disrupted' ? ('upcoming' as const) : node.status }
+              : {
+                  ...node,
+                  title: node.title.replace(/ · \+25 min buffer/g, ''),
+                  notes: node.notes.replace(/ · Weather buffer \+25 min after Day \d+ replan\./g, ''),
+                },
+          )
+        return { ...trip, nodes }
+      }),
+    )
+  }, [])
+
   const completeTrip = useCallback((tripId: string) => {
     setTrips((current) =>
       current.map((trip) => (trip.id === tripId ? { ...trip, status: 'completed' } : trip)),
@@ -743,12 +764,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       markNodeVisited,
       applyLiveReroute,
       applyDayReplan,
+      resetDayReplan,
       keepLivePlan,
       completeTrip,
       resetDemoJourney,
       commitBuiltTrip,
     }),
-    [user, role, trips, activeTripId, setActiveTripId, bookings, conflicts, notifications, toasts, generating, liveSources, plan, checkout, pushToast, dismissToast, savePlan, generateItinerary, refreshLivePlan, refreshLiveConflicts, enterLiveTrip, markNodeVisited, applyLiveReroute, applyDayReplan, keepLivePlan, completeTrip, resetDemoJourney, commitBuiltTrip],
+    [user, role, trips, activeTripId, setActiveTripId, bookings, conflicts, notifications, toasts, generating, liveSources, plan, checkout, pushToast, dismissToast, savePlan, generateItinerary, refreshLivePlan, refreshLiveConflicts, enterLiveTrip, markNodeVisited, applyLiveReroute, applyDayReplan, resetDayReplan, keepLivePlan, completeTrip, resetDemoJourney, commitBuiltTrip],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
@@ -762,11 +784,13 @@ export function useAppState() {
 
 export function usePrimaryTrip() {
   const { trips, activeTripId } = useAppState()
+  const live = trips.find((trip) => trip.status === 'live')
+  if (live) return live
   if (activeTripId) {
     const found = trips.find((trip) => trip.id === activeTripId)
     if (found) return found
   }
-  return trips.find((trip) => trip.status === 'live') ?? trips.find((trip) => trip.id === 'trip-amd-goa') ?? trips[0]
+  return trips.find((trip) => trip.id === 'trip-amd-goa') ?? trips[0]
 }
 
 

@@ -13,11 +13,13 @@ export function AbnormalityReplanPanel({
   snapshot,
   compact = false,
   onApply,
+  onReset,
 }: {
   trip: Trip
   snapshot: TwinSnapshot | null
   compact?: boolean
   onApply: (proposal: ReplanProposal) => void
+  onReset?: () => void
 }) {
   const [force, setForce] = useState(false)
   const [applied, setApplied] = useState(false)
@@ -27,6 +29,33 @@ export function AbnormalityReplanPanel({
   useEffect(() => {
     if (already) setApplied(true)
   }, [already])
+
+  if (applied || already) {
+    return (
+      <Card className="border-emerald-200 bg-emerald-50/50">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800">Replan on the path</p>
+        <h3 className="mt-1 font-display text-xl text-ink">Weather rewrite is applied from the wet day</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          Outdoor hops from that morning are indoor holds. Originals stay on the list as disrupted so you can show what
+          changed. Hotels and flights stay booked.
+        </p>
+        {onReset ? (
+          <Button
+            type="button"
+            className="mt-3"
+            variant="secondary"
+            onClick={() => {
+              onReset()
+              setApplied(false)
+              setForce(false)
+            }}
+          >
+            Reset weather path
+          </Button>
+        ) : null}
+      </Card>
+    )
+  }
 
   if (!proposal) {
     return (

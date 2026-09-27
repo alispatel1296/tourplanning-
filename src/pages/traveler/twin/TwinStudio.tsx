@@ -27,7 +27,7 @@ const TONE: Record<string, string> = {
 export function TwinStudio() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { trips, applyLiveReroute, applyDayReplan, pushToast } = useAppState()
+  const { trips, applyLiveReroute, applyDayReplan, resetDayReplan, pushToast } = useAppState()
   const trip = trips.find((item) => item.id === id) ?? trips[0]
   const twin = useWeatherTwin(trip)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -58,6 +58,23 @@ export function TwinStudio() {
         description="Open-Meteo observations, SerpApi social signals, and the existing itinerary graph stay in one model. What-if levers change the twin only."
         actions={
           <div className="flex flex-wrap gap-2">
+            <label className="flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600">
+              Circuit
+              <select
+                className="max-w-[200px] bg-transparent text-ink outline-none"
+                value={trip.id}
+                onChange={(event) => navigate(`/traveler/twin/${event.target.value}`)}
+              >
+                {trips
+                  .filter((item) => item.status !== 'cancelled')
+                  .slice(0, 14)
+                  .map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.title}
+                    </option>
+                  ))}
+              </select>
+            </label>
             <Button type="button" variant="secondary" onClick={twin.refresh}>
               Refresh live feeds
             </Button>
@@ -79,6 +96,7 @@ export function TwinStudio() {
         trip={trip}
         snapshot={snapshot}
         onApply={(proposal) => applyDayReplan(trip.id, proposal)}
+        onReset={() => resetDayReplan(trip.id)}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

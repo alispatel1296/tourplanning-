@@ -80,7 +80,13 @@ export function overlayConflict(conflict: Conflict): Conflict {
 
 export function hydratePrimaryTrip(trip: Trip): Trip {
   const live = readLiveMirror()
-  return { ...trip, nodes: live.nodes, spent: live.spent, status: live.tripStatus }
+  const looksWestCoast = live.nodes.some(
+    (node) => node.id === 'n10' || /baga|andheri|candolim|dabolim|kalupur/i.test(`${node.title} ${node.city}`),
+  )
+  if (!looksWestCoast) {
+    return { ...trip, nodes: primaryTripNodes, spent: 55800, status: 'live' }
+  }
+  return { ...trip, nodes: live.nodes, spent: live.spent, status: live.tripStatus === 'ready' ? trip.status : live.tripStatus }
 }
 
 export function aaravNotes() {
