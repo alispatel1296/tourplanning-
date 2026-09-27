@@ -94,9 +94,7 @@ export function ResultView({ onRegenerate }: { onRegenerate: () => void }) {
         {duration.nights} nights • {duration.days} days • {trip.adults} travelers · {dateRangeLabel(plan)} · {trip.route}
         {sources.length ? ` · ${sources.join(' · ')}` : ''}
         {livePlan?.narrative &&
-        [trip.origin.city, ...trip.destinations.map((item) => item.city)].some((city) =>
-          livePlan.narrative.toLowerCase().includes(city.toLowerCase()),
-        )
+        trip.destinations.some((item) => livePlan.narrative.toLowerCase().includes(item.city.toLowerCase()))
           ? ` — ${livePlan.narrative}`
           : ''}
       </p>
@@ -268,7 +266,8 @@ type="button"           variant={saved ? 'outline' : 'secondary'}
           <div>
             <p className="card-title mb-3">AI Insights</p>
             <div className="space-y-3">
-              {livePlan?.narrative ? (
+              {livePlan?.narrative &&
+              trip.destinations.some((item) => livePlan.narrative.toLowerCase().includes(item.city.toLowerCase())) ? (
                 <AIInsightCard title="Live compose note" body={livePlan.narrative} confidence={0.9} />
               ) : (
                 <AIInsightCard

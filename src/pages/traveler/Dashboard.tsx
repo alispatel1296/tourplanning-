@@ -7,20 +7,51 @@ import {
   Sun,
   ShieldAlert,
   ShieldCheck,
-  ArrowUpRight
+  ArrowUpRight,
+  Mic,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { useAppState, usePrimaryTrip } from '@/state/AppState'
 import { formatINR } from '@/lib/cn'
+import { defaultPlan, persistPlan, tripDuration } from '@/lib/plan'
+import { VoicePanel, VOICE_SAMPLE } from '@/pages/traveler/plan/VoicePanel'
+import { composeTrip } from '@/services/travel/TravelDataService'
 import { getCurrentWeather } from '@/services/weather/weather'
 import { seedLookup } from '@/services/geo/seeds'
 import type { WeatherNow } from '@/services/geo/types'
+import type { TripPlan } from '@/types/plan'
 
 export function TravelerDashboard() {
-  const { user } = useAppState()
+  const { user, plan, savePlan, generateItinerary } = useAppState()
   const trip = usePrimaryTrip()
   const navigate = useNavigate()
+  const [voice, setVoice] = useState(false)
+
+  const generateFromVoice = (patch: Partial<TripPlan>) => {
+    const next = { ...(plan ?? defaultPlan), ...patch }
+    savePlan(next)
+    persistPlan(next)
+    generateItinerary(next)
+    sessionStorage.removeItem('tf-itin-ready')
+    sessionStorage.removeItem('tf-trip-compose')
+    const duration = tripDuration(next)
+    void composeTrip({
+      origin: next.origin,
+      destination: next.destinations[next.destinations.length - 1],
+      interests: next.styles,
+      budget: next.budget,
+      duration: duration.days,
+      adults: next.adults,
+      startDate: next.startDate,
+      endDate: next.endDate,
+      brief: next.brief,
+    })
+      .then((result) => sessionStorage.setItem('tf-trip-compose', JSON.stringify(result)))
+      .catch(() => sessionStorage.removeItem('tf-trip-compose'))
+    setVoice(false)
+    navigate('/traveler/itinerary', { state: { generate: true } })
+  }
 
   const [goaWx, setGoaWx] = useState<WeatherNow | null>(null)
 
@@ -141,6 +172,19 @@ export function TravelerDashboard() {
 
         {/* Right Column: Widgets */}
         <div className="space-y-6">
+          <button
+            type="button"
+            className="w-full rounded-[2rem] border border-brand-100 bg-white p-6 text-left shadow-sm transition hover:border-brand-200"
+            onClick={() => setVoice(true)}
+          >
+            <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-800">
+              <Mic className="h-3.5 w-3.5" />
+              Speak a trip
+            </p>
+            <p className="mt-2 font-display text-2xl text-[var(--color-charcoal)]">Say the route. Get the itinerary.</p>
+            <p className="mt-1 text-sm text-slate-600">“{VOICE_SAMPLE}”</p>
+          </button>
+
           {/* Up Next Widget */}
           <div className="bg-[var(--color-charcoal)] text-white rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
             <div className="absolute -right-6 -top-6 text-white/5">
@@ -224,6 +268,13 @@ export function TravelerDashboard() {
           </div>
         </div>
       </div>
+
+      <VoicePanel
+        open={voice}
+        onClose={() => setVoice(false)}
+        onApply={(patch) => savePlan({ ...(plan ?? defaultPlan), ...patch })}
+        onGenerate={generateFromVoice}
+      />
     </motion.div>
   )
 }

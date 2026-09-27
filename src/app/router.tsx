@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom'
+import { Navigate, Outlet, createBrowserRouter, useLocation } from 'react-router-dom'
 import { TravelerShell } from '@/components/layout/TravelerShell'
 import { OperatorShell } from '@/components/layout/OperatorShell'
+import { homeFor } from '@/lib/auth'
 import { useAppState } from '@/state/AppState'
 import type { Role } from '@/types'
 
@@ -88,12 +89,24 @@ const VendorHome = lazy(() => import('@/pages/FieldRoles').then((m) => ({ defaul
 
 function RequireRole({ allow }: { allow: Role[] }) {
   const { role, signIn } = useAppState()
+  const location = useLocation()
+  const fieldRole = allow.includes('coordinator') || allow.includes('vendor')
 
   useEffect(() => {
-    if (!role || !allow.includes(role)) {
+    if (fieldRole && (!role || !allow.includes(role))) {
       signIn(allow[0])
     }
-  }, [role, allow, signIn])
+  }, [role, allow, signIn, fieldRole])
+
+  if (!fieldRole && !role) {
+    const next = encodeURIComponent(location.pathname + location.search)
+    const demo = allow.includes('operator') ? 'operator' : 'traveler'
+    return <Navigate to={`/login?next=${next}&demo=${demo}`} replace />
+  }
+
+  if (!fieldRole && role && !allow.includes(role)) {
+    return <Navigate to={homeFor(role)} replace />
+  }
 
   return (
     <Suspense fallback={<RouteFallback />}>

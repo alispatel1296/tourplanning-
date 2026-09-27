@@ -160,8 +160,16 @@ export function DestinationStep({
     const cityQuery = query.trim().split(/\s+/).length <= 3 && !/\d|under|budget|beach trip/i.test(query)
     onChange({
       brief: query,
+      origin: next.origin || plan.origin,
       destinations: next.destinations.length ? next.destinations.slice(0, 2) : plan.destinations,
       styles: next.styles.length ? [...new Set([...plan.styles, ...next.styles])] : plan.styles,
+      budget: next.budget ?? plan.budget,
+      accommodation:
+        next.budget != null && next.budget <= 18000
+          ? 'Budget'
+          : next.budget != null && next.budget >= 80000
+            ? 'Luxury'
+            : plan.accommodation,
       endDate: next.days
         ? format(addDays(parseISO(plan.startDate), next.days - 1), 'yyyy-MM-dd')
         : plan.endDate,
@@ -243,7 +251,7 @@ export function DestinationStep({
         </button>
       </div>
 
-      <AIBubble text='Write exactly: "Jaipur and Udaipur, 6 days from Ahmedabad". Two cities only — the backend returns the full day-by-day output.' />
+      <AIBubble text='Speak or type: "I want to go to Mumbai from Ahmedabad for 5 days and budget is 10k". I will build the day-by-day itinerary.' />
 
       {/* Search bar */}
       <div className="dest-search-row">
@@ -254,7 +262,7 @@ export function DestinationStep({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && applySearch()}
-            placeholder='Jaipur and Udaipur, 6 days from Ahmedabad'
+            placeholder='Mumbai from Ahmedabad, 5 days, budget 10k'
             className="dest-search-input"
           />
           {searching && <Loader2 className="dest-search-spinner animate-spin" />}
@@ -269,7 +277,7 @@ export function DestinationStep({
           title="Tell TripFlow by voice"
         >
           <Sparkles className="h-4 w-4" />
-          AI
+          Speak
         </button>
       </div>
 
@@ -278,9 +286,11 @@ export function DestinationStep({
         <div className="dest-brief-chip">
           <MapPin className="h-3 w-3 flex-shrink-0" />
           <span>{query}</span>
-          {parsed.destinations.length > 0 && (
+          {(parsed.destinations.length > 0 || parsed.days || parsed.budget) && (
             <span className="dest-brief-parsed">
-              → {parsed.destinations.join(', ')}
+              → {[parsed.origin, ...parsed.destinations].filter(Boolean).join(' → ')}
+              {parsed.days ? ` · ${parsed.days}d` : ''}
+              {parsed.budget ? ` · ₹${parsed.budget.toLocaleString('en-IN')}` : ''}
             </span>
           )}
           <button

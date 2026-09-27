@@ -24,6 +24,8 @@ import { ProgressBar, ProgressRing } from '@/components/ui/Progress'
 import { AILabel } from '@/components/domain/AICards'
 import { AdaptationScene } from '@/pages/landing/AdaptationScene'
 import { OperatorDeskPreview, TravelerPhonePreview } from '@/pages/landing/ExperiencePreviews'
+import { destFor, type AuthRole } from '@/lib/auth'
+import { LoginPanel } from '@/pages/auth/LoginPanel'
 import { useAppState } from '@/state/AppState'
 
 const howSteps = [
@@ -153,14 +155,18 @@ export function Landing() {
   const navigate = useNavigate()
   const [legal, setLegal] = useState<'privacy' | 'terms' | null>(null)
   const [menu, setMenu] = useState(false)
+  const [gate, setGate] = useState<{ next: string; intent?: AuthRole } | null>(null)
 
-  const enterTraveler = (path: string) => {
-    signIn('traveler')
-    navigate(path)
+  const openLogin = (next: string, intent?: AuthRole) => {
+    setMenu(false)
+    setGate({ next, intent })
   }
-  const enterOperator = () => {
-    signIn('operator')
-    navigate('/operator')
+
+  const enterWorkspace = (role: AuthRole, profile?: { name?: string; email?: string }) => {
+    signIn(role, profile)
+    const dest = destFor(role, gate?.next ?? null)
+    setGate(null)
+    navigate(dest)
   }
 
   return (
@@ -186,10 +192,10 @@ export function Landing() {
             </a>
           </nav>
           <div className="flex items-center gap-4">
-            <button type="button" onClick={enterOperator} className="hidden sm:block text-[11px] font-bold uppercase tracking-[0.15em] text-white border border-white/30 px-6 py-2.5 transition-colors hover:bg-white/10">
+            <button type="button" onClick={() => openLogin('/operator', 'operator')} className="hidden sm:block text-[11px] font-bold uppercase tracking-[0.15em] text-white border border-white/30 px-6 py-2.5 transition-colors hover:bg-white/10">
               Operator
             </button>
-            <button type="button" className="bg-[var(--color-muted-gold)] text-[var(--color-charcoal)] hover:bg-white/90 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.15em] transition-colors" onClick={() => enterTraveler('/traveler/plan')}>
+            <button type="button" className="bg-[var(--color-muted-gold)] text-[var(--color-charcoal)] hover:bg-white/90 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.15em] transition-colors" onClick={() => openLogin('/traveler/plan', 'traveler')}>
               Plan a Journey &rarr;
             </button>
             <IconButton label="Menu" className="lg:hidden text-white hover:bg-white/10" onClick={() => setMenu((open) => !open)}>
@@ -210,7 +216,7 @@ export function Landing() {
                 Features
               </a>
               <Link to="/login">Sign in</Link>
-              <button type="button" className="text-left text-[var(--color-muted-gold)]" onClick={() => enterOperator()}>
+              <button type="button" className="text-left text-[var(--color-muted-gold)]" onClick={() => openLogin('/operator', 'operator')}>
                 Operator desk
               </button>
             </div>
@@ -244,7 +250,7 @@ export function Landing() {
               <button 
                 type="button"
                 className="bg-[var(--color-muted-gold)] text-[var(--color-charcoal)] px-8 py-4 text-xs font-bold tracking-[0.15em] uppercase transition-transform hover:scale-105 flex items-center gap-2"
-                onClick={() => enterTraveler('/traveler/plan')}
+                onClick={() => openLogin('/traveler/plan', 'traveler')}
               >
                 Plan a journey &rarr;
               </button>
@@ -353,7 +359,7 @@ export function Landing() {
             <Button
               type="button"
               className="bg-[var(--color-muted-gold)] text-[var(--color-charcoal)] hover:bg-white"
-              onClick={() => enterTraveler('/traveler/predict/trip-amd-goa')}
+              onClick={() => openLogin('/traveler/predict/trip-amd-goa', 'traveler')}
             >
               Open emergency forecast
             </Button>
@@ -399,7 +405,7 @@ export function Landing() {
               <li>Live disruption handling rewrites the day without a call to a call center.</li>
               <li>Budget tracking shows what is spent, held, and still free to use.</li>
             </ul>
-            <Button type="button" className="mt-6" onClick={() => enterTraveler('/traveler')}>
+            <Button type="button" className="mt-6" onClick={() => openLogin('/traveler', 'traveler')}>
               Open traveler workspace
             </Button>
           </div>
@@ -415,7 +421,7 @@ export function Landing() {
               Horizon Trails sees every departure, vendor hold, and AI-detected conflict on one desk. Coordinators get a
               named owner. Guests keep a living itinerary.
             </p>
-            <Button type="button" className="mt-6" variant="secondary" onClick={enterOperator}>
+            <Button type="button" className="mt-6" variant="secondary" onClick={() => openLogin('/operator', 'operator')}>
               View operator desk
             </Button>
           </div>
@@ -462,10 +468,10 @@ export function Landing() {
             Start as Aarav Shah on the West Coast Circuit, or open the Horizon Trails operations desk.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button type="button" size="lg" onClick={() => enterTraveler('/traveler/plan')}>
+            <Button type="button" size="lg" onClick={() => openLogin('/traveler/plan', 'traveler')}>
               Start Planning
             </Button>
-            <Button type="button" size="lg" variant="secondary" onClick={enterOperator}>
+            <Button type="button" size="lg" variant="secondary" onClick={() => openLogin('/operator', 'operator')}>
               View operator desk
             </Button>
           </div>
@@ -492,8 +498,8 @@ export function Landing() {
           <FooterCol
             title="Platform"
             links={[
-              { label: 'Traveler', onClick: () => enterTraveler('/traveler') },
-              { label: 'Operator', onClick: enterOperator },
+              { label: 'Traveler', onClick: () => openLogin('/traveler', 'traveler') },
+              { label: 'Operator', onClick: () => openLogin('/operator', 'operator') },
               { label: 'Contact', href: 'mailto:hello@tripflow.ai' },
             ]}
           />
@@ -508,6 +514,14 @@ export function Landing() {
         </div>
         <p className="mx-auto mt-8 max-w-6xl px-5 text-[12px] text-slate-500">© 2026 TripFlow AI</p>
       </footer>
+
+      <Modal
+        open={gate !== null}
+        onClose={() => setGate(null)}
+        title={gate?.intent === 'operator' ? 'Operator login' : 'Plan a journey'}
+      >
+        <LoginPanel compact onEnter={enterWorkspace} intent={gate?.intent} />
+      </Modal>
 
       <Modal
         open={legal !== null}

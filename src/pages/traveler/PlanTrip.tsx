@@ -56,25 +56,35 @@ export function PlanTrip() {
 
   const patch = (next: Partial<TripPlan>) => setDraft((current) => ({ ...current, ...next }))
 
-  const generate = () => {
-    savePlan(draft)
-    generateItinerary(draft)
+  const launchItinerary = (next: TripPlan) => {
+    setDraft(next)
+    savePlan(next)
+    persistPlan(next)
+    generateItinerary(next)
     sessionStorage.removeItem('tf-itin-ready')
-    const duration = tripDuration(draft)
+    sessionStorage.removeItem('tf-trip-compose')
+    const duration = tripDuration(next)
     void composeTrip({
-      origin: draft.origin,
-      destination: draft.destinations[draft.destinations.length - 1],
-      interests: draft.styles,
-      budget: draft.budget,
+      origin: next.origin,
+      destination: next.destinations[next.destinations.length - 1],
+      interests: next.styles,
+      budget: next.budget,
       duration: duration.days,
-      adults: draft.adults,
-      startDate: draft.startDate,
-      endDate: draft.endDate,
-      brief: draft.brief,
+      adults: next.adults,
+      startDate: next.startDate,
+      endDate: next.endDate,
+      brief: next.brief,
     })
       .then((result) => sessionStorage.setItem('tf-trip-compose', JSON.stringify(result)))
       .catch(() => sessionStorage.removeItem('tf-trip-compose'))
     navigate('/traveler/itinerary', { state: { generate: true } })
+  }
+
+  const generate = () => launchItinerary(draft)
+
+  const generateFromVoice = (patch: Partial<TripPlan>) => {
+    setVoice(false)
+    launchItinerary({ ...draft, ...patch })
   }
 
   const startBuild = () => {
@@ -242,7 +252,7 @@ export function PlanTrip() {
         <span className="plan-voice-fab-label">Voice</span>
       </button>
 
-      <VoicePanel open={voice} onClose={() => setVoice(false)} onApply={patch} />
+      <VoicePanel open={voice} onClose={() => setVoice(false)} onApply={patch} onGenerate={generateFromVoice} />
 
       {/* Inline CSS for this page */}
       <style>{`

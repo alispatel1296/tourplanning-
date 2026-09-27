@@ -148,6 +148,8 @@ export function budgetAllocation(budget: number) {
 }
 
 const knownCities: Record<string, string> = {
+  ahmedabad: 'Ahmedabad',
+  amdavad: 'Ahmedabad',
   mumbai: 'Mumbai',
   bombay: 'Mumbai',
   goa: 'Goa',
@@ -216,18 +218,33 @@ export function parseBrief(text: string) {
   if (freeMatch) {
     freeMatch.forEach((raw) => {
       const city = raw.replace(/^(?:to|in|visit|from|→|->|,)\s*/i, '').trim()
-      if (city.length > 2 && !found.includes(city) && city.toLowerCase() !== 'ahmedabad') {
-        found.push(city)
+      const mapped = knownCities[city.toLowerCase()] ?? city
+      if (mapped.length > 2 && !found.includes(mapped) && mapped.toLowerCase() !== 'ahmedabad') {
+        found.push(mapped)
       }
     })
   }
   // Also grab any initial Title-Case word(s) at start of text as the primary destination
   const startCity = text.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/)
-  if (startCity && startCity[1].length > 2 && !found.includes(startCity[1]) && startCity[1].toLowerCase() !== 'ahmedabad') {
-    found.unshift(startCity[1])
+  if (startCity) {
+    const mapped = knownCities[startCity[1].toLowerCase()] ?? startCity[1]
+    if (mapped.length > 2 && !found.includes(mapped) && mapped.toLowerCase() !== 'ahmedabad') {
+      found.unshift(mapped)
+    }
   }
   const dayMatch = lower.match(/(\d+)\s*-?\s*day/)
   const nightMatch = lower.match(/(\d+)\s*night/)
+  const fromMatch = lower.match(/\b(?:from|i(?:'m| am) (?:in|at))\s+([a-z][a-z\s]{1,24}?)(?=\s+(?:to|and|for|with|under|budget|\d|,|$))/)
+  const originKey = fromMatch?.[1]?.trim().replace(/\s+/g, ' ')
+  const origin =
+    originKey && knownCities[originKey]
+      ? knownCities[originKey]
+      : originKey
+        ? originKey.replace(/\b\w/g, (ch) => ch.toUpperCase())
+        : undefined
+  const kBudget = lower.match(/(?:budget|under|₹|rs\.?)\s*(?:is|=|:)?\s*(\d+(?:\.\d+)?)\s*k\b/) ?? lower.match(/\b(\d+(?:\.\d+)?)\s*k\b/)
+  const rawBudget = lower.match(/(?:budget|under|₹|rs\.?)\s*(?:is|=|:)?\s*₹?\s*(\d[\d,]{2,})/)
+  const budget = kBudget ? Math.round(Number(kBudget[1]) * 1000) : rawBudget ? Number(rawBudget[1].replace(/,/g, '')) : undefined
   const styles = styleOptions.filter((style) => lower.includes(style.toLowerCase()))
   if (lower.includes('relax')) styles.push('Relaxation')
   if (lower.includes('beach') || lower.includes('sea') || lower.includes('ocean')) styles.push('Beach')
@@ -238,8 +255,10 @@ export function parseBrief(text: string) {
   if (lower.includes('culture') || lower.includes('heritage') || lower.includes('temple')) styles.push('Culture')
   const days = dayMatch ? Number(dayMatch[1]) : nightMatch ? Number(nightMatch[1]) + 1 : undefined
   return {
-    destinations: [...new Set(found)].slice(0, 2),
+    origin,
+    destinations: [...new Set(found)].filter((name) => !origin || name.toLowerCase() !== origin.toLowerCase()).slice(0, 2),
     days,
+    budget,
     styles: [...new Set(styles)],
   }
 }
