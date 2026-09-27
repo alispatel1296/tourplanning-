@@ -66,7 +66,7 @@ export function PaymentForm({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Badge tone="warning">Demo payment</Badge>
+        <Badge tone="warning">Simulated payment</Badge>
         <p className="text-[13px] text-slate-500">Simulated only — no money is charged.</p>
       </div>
 
@@ -118,7 +118,7 @@ export function PaymentForm({
                   />
                 ))}
               </div>
-              <p className="mt-3 text-[12px] font-medium text-brand-800">Demo QR · TripFlow Pay</p>
+              <p className="mt-3 text-[12px] font-medium text-brand-800">Workspace QR · TripFlow Pay</p>
               <p className="meta">Scan is simulated. Confirm uses the UPI ID above.</p>
             </div>
           </>
@@ -177,7 +177,7 @@ export function PaymentForm({
         Confirm & Pay
       </Button>
       <p className="mt-2 text-center text-[12px] text-slate-500">
-        By confirming you accept a simulated hold on this demo itinerary. No gateway is contacted.
+        By confirming you accept a simulated hold on this itinerary. No gateway is contacted.
       </p>
     </div>
   )

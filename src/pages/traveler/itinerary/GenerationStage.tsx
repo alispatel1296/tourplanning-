@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Loader2, Sparkles, TriangleAlert } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -9,13 +9,13 @@ import { cn } from '@/lib/cn'
 
 const checks = [
   'Understanding your preferences',
-  'Finding suitable destinations',
-  'Matching hotels',
-  'Optimizing transportation',
-  'Checking activity timing',
-  'Simulating your journey',
-  'Checking budget',
-  'Adding safety buffers',
+  'Retrieving live hotels (SerpApi)',
+  'Matching flights (AviationStack + SerpApi)',
+  'Checking rail (RailRadar)',
+  'Reading weather and social signals',
+  'Composing with OpenRouter',
+  'Checking budget against live prices',
+  'Writing operator conflicts',
 ]
 
 const twinSlots = [
@@ -29,30 +29,38 @@ const twinSlots = [
   { time: '17:00', title: 'Beach activity' },
 ]
 
-export function GenerationStage({ onComplete }: { onComplete: () => void }) {
+export function GenerationStage({ onComplete, liveReady = true }: { onComplete: () => void; liveReady?: boolean }) {
   const [elapsed, setElapsed] = useState(0)
+  const finished = useRef(false)
 
   useEffect(() => {
     const started = performance.now()
     let frame = 0
     const tick = (now: number) => {
-      const next = now - started
-      setElapsed(next)
-      if (next < 4200) frame = requestAnimationFrame(tick)
-      else onComplete()
+      setElapsed(now - started)
+      frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [onComplete])
+  }, [])
 
-  const progress = Math.min(100, Math.round((elapsed / 4200) * 100))
-  const doneCount = Math.min(checks.length, Math.floor(elapsed / 480))
+  useEffect(() => {
+    if (finished.current) return
+    if (elapsed >= 2800 && liveReady) {
+      finished.current = true
+      onComplete()
+    }
+  }, [elapsed, liveReady, onComplete])
+
+  const waitCap = liveReady ? 4200 : 14000
+  const progress = Math.min(99, Math.round((elapsed / waitCap) * 100))
+  const doneCount = Math.min(checks.length, Math.floor(elapsed / 520))
   const showTwin = elapsed > 700
   const showCounter = elapsed > 1300
   const checksCount = Math.min(1248, Math.round(Math.max(0, elapsed - 1300) * 0.85))
   const showConflict = elapsed > 2100
-  const resolved = elapsed > 3100
-  const showOptimize = elapsed > 3400
+  const resolved = elapsed > 3100 && liveReady
+  const showOptimize = elapsed > 3400 && liveReady
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -60,7 +68,9 @@ export function GenerationStage({ onComplete }: { onComplete: () => void }) {
         <AILabel />
         <h1 className="page-title mt-3">Building your journey...</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Generating, then simulating, checking, and optimizing — not dropping a static package.
+          {liveReady
+            ? 'Live hotels, flights, rail, and weather are in. OpenRouter is locking the circuit.'
+            : 'Waiting on SerpApi, AviationStack, RailRadar, Open-Meteo, and OpenRouter — not a static package.'}
         </p>
         <div className="mt-4">
           <ProgressBar value={progress} tone="ai" />
@@ -69,7 +79,7 @@ export function GenerationStage({ onComplete }: { onComplete: () => void }) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className={cn(elapsed < 4200 && 'ai-generating')}>
+        <Card className={cn((!liveReady || elapsed < 4200) && 'ai-generating')}>
           <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-brand-700">Generation</p>
           <ul className="mt-4 space-y-2.5">
             {checks.map((item, index) => {
@@ -166,9 +176,9 @@ export function GenerationStage({ onComplete }: { onComplete: () => void }) {
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                 <Card className="border-brand-200 bg-brand-50/50">
                   <Badge tone="ai">Optimization</Badge>
-                  <p className="mt-3 text-sm font-semibold text-brand-900">Circuit re-sequenced inside ₹65,000</p>
+                  <p className="mt-3 text-sm font-semibold text-brand-900">Live circuit locked from retrieved candidates</p>
                   <p className="mt-1 text-[13px] text-slate-600">
-                    Buffer restored, beach slot moved to 7:30 PM, and the Digital Twin still scores 94% feasible.
+                    Names come from SerpApi / AviationStack / RailRadar. OpenRouter only sequences what was retrieved.
                   </p>
                 </Card>
               </motion.div>

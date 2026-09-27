@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: tripflow
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/travel/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini
+      - key: NUGEN_API_KEY
+        sync: false
+      - key: NUGEN_BASE_MODEL
+        value: qwen-v2p5-0p5b-instruct
+      - key: NUGEN_CHAT_MODEL
+        value: glm-5p2
+      - key: AVIATIONSTACK_API_KEY
+        sync: false
+      - key: RAILRADAR_API_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false

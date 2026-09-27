@@ -15,6 +15,7 @@ import {
   UsersRound,
   BarChart3,
   TriangleAlert,
+  Orbit,
 } from 'lucide-react'
 import { Brand } from '@/components/layout/Brand'
 import { ScrollToTop } from '@/components/layout/ScrollToTop'
@@ -37,6 +38,7 @@ const nav = [
   { to: '/operator/bookings', label: 'Bookings', icon: CalendarCheck },
   { to: '/operator/groups', label: 'Group Tours', icon: Radio },
   { to: '/operator/conflicts', label: 'Conflicts', icon: TriangleAlert },
+  { to: '/operator/twin', label: 'Weather Twin', icon: Orbit },
   { to: '/operator/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/operator/notifications', label: 'Notifications', icon: Bell },
   { to: '/operator/settings', label: 'Settings', icon: Settings },
@@ -81,7 +83,7 @@ export function OperatorShell() {
           className={({ isActive }) =>
             cn(
               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium',
-              isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-100',
+              isActive ? 'bg-white/10 text-[var(--color-muted-gold)]' : 'text-white/60 hover:bg-white/5 hover:text-white',
             )
           }
         >
@@ -93,16 +95,16 @@ export function OperatorShell() {
   )
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-[var(--color-warm-ivory)] text-[var(--color-charcoal)]">
       <ScrollToTop />
-      <aside className="fixed inset-y-0 left-0 hidden w-64 bg-navy px-4 py-5 lg:flex lg:flex-col">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 bg-[var(--color-charcoal)] px-4 py-5 lg:flex lg:flex-col shadow-xl">
         <Brand tone="dark" />
-        <p className="mt-6 mb-3 px-3 text-[11px] uppercase tracking-[0.16em] text-slate-500">Operations</p>
+        <p className="mt-8 mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-muted-gold)]">Operations</p>
         {links}
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-white px-4">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[var(--color-soft-sand)] bg-[var(--color-warm-ivory)]/95 backdrop-blur-md px-4">
           <IconButton label="Menu" className="lg:hidden" onClick={() => setMobileNav(true)}>
             <Menu className="h-4 w-4" />
           </IconButton>
@@ -123,7 +125,7 @@ export function OperatorShell() {
             </span>
           </IconButton>
           <IconButton label="AI Assistant" onClick={() => setAssistant(true)}>
-            <Sparkles className="h-4 w-4 text-brand-600" />
+            <Sparkles className="h-4 w-4 text-[var(--color-muted-gold)]" />
           </IconButton>
           <button type="button" onClick={() => navigate('/operator/settings')}>
             <Avatar initials={user?.avatarInitials ?? 'MK'} name={user?.name} />
@@ -137,7 +139,7 @@ export function OperatorShell() {
       </div>
 
       <Drawer open={mobileNav} onClose={() => setMobileNav(false)} title="Operator" side="left">
-        <div className="rounded-2xl bg-navy p-3">{links}</div>
+        <div className="rounded-2xl bg-[var(--color-charcoal)] p-3">{links}</div>
       </Drawer>
       <CommandPalette open={palette} onClose={() => setPalette(false)} items={commands} />
       <Drawer open={assistant} onClose={() => setAssistant(false)} title="AI Assistant">

@@ -484,7 +484,7 @@ function westCoastHops(): PlanHop[] {
           duration: 'overnight',
           summary: 'Saves ₹3,900. You arrive home next morning.',
           description:
-            'Use if you can spend one more night on the train. Changes the end date feel, not the demo dates.',
+            'Use if you can spend one more night on the train. Changes the end-date feel, not the booked dates.',
         },
       ],
     },

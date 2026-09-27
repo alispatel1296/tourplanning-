@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { GenerationStage } from '@/pages/traveler/itinerary/GenerationStage'
 import { ResultView } from '@/pages/traveler/itinerary/ResultView'
 import { useAppState } from '@/state/AppState'
@@ -8,8 +8,7 @@ const READY_KEY = 'tf-itin-ready'
 
 export function Itinerary() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const { plan, generateItinerary } = useAppState()
+  const { plan, generateItinerary, generating } = useAppState()
   const forced = Boolean((location.state as { generate?: boolean } | null)?.generate)
   const [run, setRun] = useState(0)
   const [phase, setPhase] = useState<'generating' | 'ready'>(() =>
@@ -18,8 +17,8 @@ export function Itinerary() {
 
   const finish = useCallback(() => {
     sessionStorage.setItem(READY_KEY, '1')
-    navigate('/traveler/carry', { replace: true })
-  }, [navigate])
+    setPhase('ready')
+  }, [])
 
   const regenerate = () => {
     sessionStorage.removeItem(READY_KEY)
@@ -29,7 +28,7 @@ export function Itinerary() {
   }
 
   if (phase === 'generating') {
-    return <GenerationStage key={run} onComplete={finish} />
+    return <GenerationStage key={run} onComplete={finish} liveReady={!generating} />
   }
 
   return <ResultView onRegenerate={regenerate} />

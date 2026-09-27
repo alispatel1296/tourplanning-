@@ -88,7 +88,7 @@ export function CarryBrief() {
                 <CloudSun className="h-3.5 w-3.5" />
               )}
               {row.city}
-              {row.now ? <Badge tone="success">Live</Badge> : <Badge tone="warning">Demo</Badge>}
+              {row.now ? <Badge tone="success">Live</Badge> : <Badge tone="warning">Cached</Badge>}
             </p>
             <p className="mt-1 font-semibold">
               {row.now ? `${row.now.condition} ${row.now.temperatureC}°C` : weatherStrip.find((item) => item.city === row.city)?.sky}

@@ -212,7 +212,7 @@ export function buildAnalytics(filters: AnalyticsFilters): AnalyticsSnapshot {
 
 export function analyticsCsv(snapshot: AnalyticsSnapshot, filters: AnalyticsFilters) {
   const lines = [
-    ['TripFlow AI · demo analytics'],
+    ['TripFlow AI · desk analytics'],
     ['Filters', `range=${filters.range}`, `destination=${filters.destination}`, `traveler=${filters.traveler}`, `vendor=${filters.vendor}`, `status=${filters.status}`],
     [],
     ['KPI', 'Value'],
@@ -238,7 +238,7 @@ export function analyticsCsv(snapshot: AnalyticsSnapshot, filters: AnalyticsFilt
 export function analyticsReport(snapshot: AnalyticsSnapshot, filters: AnalyticsFilters) {
   return [
     'TripFlow AI · Operator analytics brief',
-    'Demo analytics — simulated from the Horizon Trails desk. Not live production data.',
+    'Desk analytics — compiled from the Horizon Trails workspace. Seasonal, not a production warehouse.',
     '',
     `View · ${filters.range} · ${filters.destination} · ${filters.traveler} · ${filters.vendor} · ${filters.status}`,
     '',

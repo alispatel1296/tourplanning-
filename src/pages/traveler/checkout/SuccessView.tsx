@@ -43,7 +43,7 @@ export function SuccessView({
         <p className="mt-1 font-display text-2xl font-semibold tracking-tight">{record.bookingId}</p>
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="meta">Paid (demo)</p>
+            <p className="meta">Paid (hold)</p>
             <p className="mt-1 font-semibold">{formatINR(record.total)}</p>
           </div>
           <div>
@@ -52,7 +52,7 @@ export function SuccessView({
           </div>
         </div>
         <p className="mt-3 text-[13px] text-slate-500">
-          Total {formatINR(TOTAL)}. Nothing was charged — this is a TripFlow demo hold.
+          Total {formatINR(TOTAL)}. Nothing was charged — this is a TripFlow hold.
         </p>
       </Card>
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">

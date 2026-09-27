@@ -162,20 +162,24 @@ export function visualBranches(trip: Trip, nodes: TripNode[]): VisualBranch[] {
     })
   })
 
-  main.forEach((node) => {
-    if (branches.some((row) => row.parentId === node.id)) return
-    if (node.category !== 'transport' && node.category !== 'stay') return
-    const catalog = alternativesFor(node)[0]
-    if (!catalog) return
-    branches.push({
-      id: catalog.id,
-      parentId: node.id,
-      title: catalog.name,
-      subtitle: catalog.benefit,
-      extraCost: catalog.price - node.cost,
-      image: nodeImage(node),
+  const corridor = `${trip.route} ${trip.destinations.map((item) => item.city).join(' ')}`.toLowerCase()
+  const localCatalog = /goa|mumbai|candolim|baga/.test(corridor)
+  if (localCatalog) {
+    main.forEach((node) => {
+      if (branches.some((row) => row.parentId === node.id)) return
+      if (node.category !== 'transport' && node.category !== 'stay') return
+      const catalog = alternativesFor(node)[0]
+      if (!catalog) return
+      branches.push({
+        id: catalog.id,
+        parentId: node.id,
+        title: catalog.name,
+        subtitle: catalog.benefit,
+        extraCost: catalog.price - node.cost,
+        image: nodeImage(node),
+      })
     })
-  })
+  }
 
   return branches
 }

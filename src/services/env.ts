@@ -23,7 +23,7 @@ export function providerLabel(id: ServiceId): string {
     geocode: 'Nominatim',
     routing: 'OSRM',
     places: env.placesKey ? 'Nominatim + Places key' : 'Nominatim / Overpass',
-    hotels: 'Places search + demo availability',
+    hotels: 'Places search + informational availability',
     weather: env.weatherKey ? 'Open-Meteo + weather key' : 'Open-Meteo',
     currency: env.currencyKey ? 'Open ER-API + FX key' : 'Open ER-API',
     ai: env.aiKey ? 'OpenAI-compatible' : 'Local ranker (no key)',

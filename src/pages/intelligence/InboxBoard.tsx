@@ -102,7 +102,7 @@ export function InboxBoard({ role }: { role: Audience }) {
 
   const handleReset = () => {
     resetDemoInbox()
-    pushToast({ title: 'Inbox Reset', body: 'Restored standard demo notification feed.' })
+    pushToast({ title: 'Inbox Reset', body: 'Restored the standard notification feed.' })
     refresh()
   }
 

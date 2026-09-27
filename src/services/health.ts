@@ -54,7 +54,7 @@ export async function testConnection(id: ServiceId): Promise<HealthRow> {
       Object.assign(base, { latencyMs, detail: 'OSRM reachable' })
     } else if (id === 'places' || id === 'hotels') {
       const latencyMs = await pingJson('https://nominatim.openstreetmap.org/status.php?format=json')
-      Object.assign(base, { latencyMs, detail: 'Place search reachable · hotel booking is demo' })
+      Object.assign(base, { latencyMs, detail: 'Place search reachable · hotel booking is informational' })
     } else if (id === 'weather') {
       const latencyMs = await pingJson('https://api.open-meteo.com/v1/forecast?latitude=15.49&longitude=73.83&current=temperature_2m')
       Object.assign(base, { latencyMs, detail: 'Open-Meteo reachable' })

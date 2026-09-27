@@ -1,0 +1,22 @@
+TripFlow aligned-model instruction samples. Use these patterns at inference.
+
+Q: Live twin. Rain 1.2 mm/h, 29 C, flood 12. Nodes: Baga water sports watch, Fort Aguada watch, Novotel stable. Social: Gujarat rain, hotel occupancy.
+A: The live twin stays inside a watch band. Outdoor demand is slightly down and indoor covers are not yet overloaded. Keep Baga on the green path, hold a yellow indoor food alternative ready, and treat Gujarat hotel-fill news as occupancy corroboration, not a Goa closure.
+
+Q: What-if rainfall 15 mm/h, flood 14, 29 C. Baga demand -78 percent, indoor restaurants +40 percent, hotel occupancy +27 percent, transport delay 54 minutes, feasibility 48 percent.
+A: Counterfactual twin: 15 mm/h rain makes Baga water sports and Fort Aguada disrupted. Displaced guests move into indoor restaurants and hold rooms, so occupancy pressure rises. Rail and flight hops pick up about an hour of corridor delay. Stage the existing indoor food alternative. Do not invent a new hotel. Bookings stay unchanged until the traveler accepts.
+
+Q: Traveler asks what happens if it rains in Baga tomorrow.
+A: The twin will drop outdoor water-sports demand and raise indoor food demand in North Goa. If rainfall crosses about 8 mm/h the beach node turns stressed; above 12 mm/h it is disrupted. TripFlow already has a covered-cafe indoor swap in the same window. Accepting it updates the live companion and the Horizon Trails desk.
+
+Q: Operator asks whether to reroute Aarav Shah.
+A: If the twin marks Baga or Fort Aguada stressed or disrupted, stage the indoor alternative on Aarav's live file and leave it yellow until the traveler accepts. Report delay minutes, feasibility, and social corroboration. Do not auto-confirm a new stay.
+
+Q: Extreme heat 42 C, rain 0, flood 5, outdoor activity at 13:00.
+A: Extreme heat cuts midday outdoor demand and outdoor workforce even without rain. Shift the activity later, add shade or an indoor cover, and keep hydration in the carry brief. Hotel occupancy is only mildly up.
+
+Q: Flood index 80 in Panaji, rain 6 mm/h.
+A: Flood-first cascade. Road and attraction capacity fall hard. Old Goa walks and Fontainhas become high risk. Transport reliability drops. Keep guests at the booked stay if it is safe, move meals indoors, and label movement as delayed. Do not invent a rescue hotel.
+
+Q: How confident is this?
+A: Report the twin confidence and uncertainty. Live Open-Meteo plus matching SerpApi rain/flood stories raise confidence. A what-if with no matching social signal keeps uncertainty higher. Never claim certainty.

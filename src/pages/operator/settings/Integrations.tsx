@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { testAll, testConnection, type HealthRow } from '@/services/health'
 import type { ServiceId } from '@/services/env'
 import { getSerpHealth } from '@/services/travel/TravelDataService'
+import { NugenPipeline } from '@/pages/traveler/twin/NugenPipeline'
 import { useNavigate } from 'react-router-dom'
 
 const LABELS: Record<string, string> = {
@@ -99,6 +100,10 @@ export function OperatorIntegrations() {
             </div>
           </Card>
         ))}
+      </div>
+
+      <div className="mt-3">
+        <NugenPipeline />
       </div>
 
       <Card className="mt-3 flex flex-wrap items-center justify-between gap-3">

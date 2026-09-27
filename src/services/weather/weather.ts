@@ -1,14 +1,23 @@
 import { cacheGet, cacheSet, TTL } from '@/services/cache'
 import { getJson } from '@/services/http'
-import type { WeatherDay, WeatherNow } from '@/services/geo/types'
+import type { WeatherBundle, WeatherDay, WeatherHour, WeatherNow } from '@/services/geo/types'
 
 interface OpenMeteoResponse {
   current?: {
     temperature_2m: number
     weather_code: number
+    precipitation?: number
     precipitation_probability?: number
     wind_speed_10m: number
     relative_humidity_2m: number
+  }
+  hourly?: {
+    time: string[]
+    temperature_2m: number[]
+    precipitation: number[]
+    precipitation_probability: number[]
+    weather_code: number[]
+    wind_speed_10m: number[]
   }
   daily?: {
     time: string[]
@@ -54,7 +63,7 @@ export async function getCurrentWeather(lat: number, lng: number): Promise<Weath
   if (cached) return cached
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-    '&current=temperature_2m,weather_code,precipitation_probability,wind_speed_10m,relative_humidity_2m&timezone=auto'
+    '&current=temperature_2m,weather_code,precipitation,precipitation_probability,wind_speed_10m,relative_humidity_2m&timezone=auto'
   const { data } = await getJson<OpenMeteoResponse>(url)
   const current = data.current
   if (!current) throw new Error('empty')
@@ -63,6 +72,7 @@ export async function getCurrentWeather(lat: number, lng: number): Promise<Weath
     condition: weatherLabel(current.weather_code),
     weatherCode: current.weather_code,
     precipitationProbability: current.precipitation_probability ?? 0,
+    precipitationMm: current.precipitation ?? 0,
     windKmh: Math.round(current.wind_speed_10m),
     humidity: current.relative_humidity_2m,
     source: 'live',
@@ -91,4 +101,43 @@ export async function getForecast(lat: number, lng: number): Promise<WeatherDay[
   }))
   cacheSet(key, days, TTL.weather)
   return days
+}
+
+export async function getWeatherBundle(lat: number, lng: number): Promise<WeatherBundle> {
+  const key = `wxb:${lat.toFixed(3)},${lng.toFixed(3)}`
+  const cached = cacheGet<WeatherBundle>(key)
+  if (cached) return cached
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+    '&current=temperature_2m,weather_code,precipitation,precipitation_probability,wind_speed_10m,relative_humidity_2m' +
+    '&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m' +
+    '&forecast_days=2&timezone=auto'
+  const { data } = await getJson<OpenMeteoResponse>(url)
+  const current = data.current
+  if (!current) throw new Error('empty')
+  const now: WeatherNow = {
+    temperatureC: Math.round(current.temperature_2m),
+    condition: weatherLabel(current.weather_code),
+    weatherCode: current.weather_code,
+    precipitationProbability: current.precipitation_probability ?? 0,
+    precipitationMm: current.precipitation ?? 0,
+    windKmh: Math.round(current.wind_speed_10m),
+    humidity: current.relative_humidity_2m,
+    source: 'live',
+  }
+  const hourly: WeatherHour[] = (data.hourly?.time ?? []).slice(0, 24).map((time, index) => {
+    const code = data.hourly?.weather_code[index] ?? 0
+    return {
+      time,
+      temperatureC: Math.round(data.hourly?.temperature_2m[index] ?? now.temperatureC),
+      precipitationMm: data.hourly?.precipitation[index] ?? 0,
+      precipitationProbability: data.hourly?.precipitation_probability[index] ?? 0,
+      weatherCode: code,
+      windKmh: Math.round(data.hourly?.wind_speed_10m[index] ?? now.windKmh),
+      condition: weatherLabel(code),
+    }
+  })
+  const bundle: WeatherBundle = { now, hourly, lat, lng }
+  cacheSet(key, bundle, TTL.weather)
+  return bundle
 }

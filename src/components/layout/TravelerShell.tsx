@@ -1,14 +1,15 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Bell,
-  Bookmark,
+  Briefcase,
   Compass,
-  HelpCircle,
   LayoutDashboard,
-  Map,
+  Map as MapIcon,
+  Orbit,
   Radio,
-  Search as SearchIcon,
+  ShieldAlert,
+  Sparkles,
   UserRound,
 } from 'lucide-react'
 import { Brand } from '@/components/layout/Brand'
@@ -16,39 +17,50 @@ import { ScrollToTop } from '@/components/layout/ScrollToTop'
 import { Avatar } from '@/components/ui/Avatar'
 import { IconButton } from '@/components/ui/Button'
 import { CommandPalette, type CommandItem } from '@/components/ui/CommandPalette'
-import { Drawer } from '@/components/ui/Overlay'
 import { ToastStack } from '@/components/ui/Feedback'
-import { Search } from '@/components/ui/Search'
-import { useAppState } from '@/state/AppState'
+import { useAppState, usePrimaryTrip } from '@/state/AppState'
 import { useInboxUnread } from '@/pages/intelligence/useInboxUnread'
 import { cn } from '@/lib/cn'
 
 const nav = [
-  { to: '/traveler', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/traveler/plan', label: 'Plan a Trip', icon: Compass },
-  { to: '/traveler/trips', label: 'My Trips', icon: Map },
-  { to: '/traveler/live/trip-amd-goa', label: 'Live Trip', icon: Radio },
-  { to: '/traveler/trips?view=saved', label: 'Saved', icon: Bookmark },
-  { to: '/traveler/notifications', label: 'Notifications', icon: Bell },
+  { to: '/traveler', label: 'Home', icon: LayoutDashboard, end: true },
+  { to: '/traveler/explore', label: 'Explore', icon: Compass },
+  { to: '/traveler/trips', label: 'My Trips', icon: Briefcase },
+  { to: '/traveler/plan', label: 'Plan', icon: Sparkles },
+  { to: '/traveler/map', label: 'Map', icon: MapIcon },
+  { to: '/traveler/live/trip-amd-goa', label: 'Live', icon: Radio },
+  { to: '/traveler/twin/trip-amd-goa', label: 'Weather Twin', icon: Orbit },
+  { to: '/traveler/predict/trip-amd-goa', label: 'Predict', icon: ShieldAlert },
   { to: '/traveler/profile', label: 'Profile', icon: UserRound },
 ]
 
 const mobileNav = [
   { to: '/traveler', label: 'Home', icon: LayoutDashboard, end: true },
-  { to: '/traveler/plan', label: 'Plan', icon: Compass },
-  { to: '/traveler/trips', label: 'Trips', icon: Map },
+  { to: '/traveler/trips', label: 'Trips', icon: Compass },
+  { to: '/traveler/plan', label: 'Plan', icon: Sparkles },
+  { to: '/traveler/map', label: 'Map', icon: MapIcon },
   { to: '/traveler/live/trip-amd-goa', label: 'Live', icon: Radio },
-  { to: '/traveler/profile', label: 'Profile', icon: UserRound },
 ]
 
 export function TravelerShell() {
   const { user, toasts, dismissToast, trips } = useAppState()
-  const [query, setQuery] = useState('')
+  const live = usePrimaryTrip()
   const [palette, setPalette] = useState(false)
-  const [help, setHelp] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
   const unread = useInboxUnread('traveler')
+  const liveTo = live?.id ? `/traveler/live/${live.id}` : '/traveler/live/trip-amd-goa'
+  const twinTo = live?.id ? `/traveler/twin/${live.id}` : '/traveler/twin/trip-amd-goa'
+  const predictTo = live?.id ? `/traveler/predict/${live.id}` : '/traveler/predict/trip-amd-goa'
+
+  const items = nav.map((item) =>
+    item.label === 'Live'
+      ? { ...item, to: liveTo }
+      : item.label === 'Weather Twin'
+        ? { ...item, to: twinTo }
+        : item.label === 'Predict'
+          ? { ...item, to: predictTo }
+          : item,
+  )
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -63,119 +75,118 @@ export function TravelerShell() {
 
   const commands: CommandItem[] = useMemo(
     () => [
-      { id: 'dash', label: 'Traveler dashboard', hint: 'Home', to: '/traveler' },
+      { id: 'dash', label: 'Traveler home', hint: 'Home', to: '/traveler' },
+      { id: 'explore', label: 'Explore destinations', hint: 'Places', to: '/traveler/explore' },
       { id: 'plan', label: 'Plan a trip', hint: 'AI planner', to: '/traveler/plan' },
-      { id: 'build', label: 'Build hop by hop', hint: 'From home', to: '/traveler/plan/build' },
-      { id: 'itin', label: 'West Coast itinerary', hint: 'Trip', to: '/traveler/itinerary' },
-      { id: 'carry', label: 'What to carry', hint: 'Weather kit', to: '/traveler/carry' },
-      { id: 'prep', label: 'Trip prep', hint: 'Documents', to: '/traveler/prep' },
-      { id: 'checkout', label: 'Booking & checkout', hint: 'Pay', to: '/traveler/checkout' },
-      { id: 'trips', label: 'My trips', hint: 'Upcoming', to: '/traveler/trips' },
-      { id: 'live', label: 'Live trip', hint: 'Operate', to: '/traveler/live/trip-amd-goa' },
-      { id: 'review', label: 'Post-trip review', hint: 'West Coast', to: '/traveler/review/trip-amd-goa' },
-      { id: 'review-kutch', label: 'Review Rann of Kutch', hint: 'Completed', to: '/traveler/review/trip-kutch' },
+      { id: 'map', label: 'Trip map', hint: 'Route', to: '/traveler/map' },
+      { id: 'trips', label: 'My trips', hint: 'Circuits', to: '/traveler/trips' },
+      { id: 'live', label: 'Live trip', hint: 'On the move', to: liveTo },
+      { id: 'twin', label: 'Weather Digital Twin', hint: 'What-if', to: twinTo },
+      { id: 'predict', label: 'Predictive emergency', hint: 'USP', to: predictTo },
       { id: 'notes', label: 'Notifications', hint: 'Inbox', to: '/traveler/notifications' },
     ],
-    [],
+    [liveTo, twinTo, predictTo],
+  )
+
+  const links = (
+    <nav className="space-y-1">
+      {items.map((item) => (
+        <NavLink
+          key={item.label}
+          to={item.to}
+          end={item.end}
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+              isActive
+                ? 'bg-brand-50 text-brand-800'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+            )
+          }
+        >
+          <item.icon className="h-4 w-4 shrink-0" />
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
   )
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-[var(--color-warm-ivory)] lg:flex">
       <ScrollToTop />
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-line bg-white px-4 py-5 lg:flex lg:flex-col">
+
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-white px-4 py-5 lg:flex">
         <Brand />
-        <nav className="mt-8 space-y-1">
-          {nav.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => {
-                const saved = item.label === 'Saved'
-                const trips = item.label === 'My Trips'
-                const savedOn = location.search.includes('view=saved')
-                const active = saved ? savedOn : trips ? isActive && !savedOn : isActive
-                return cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium',
-                  active ? 'bg-brand-50 text-brand-800' : 'text-slate-600 hover:bg-slate-50',
-                )
-              }}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="mt-auto rounded-xl bg-brand-50 p-3">
-          <p className="text-[12px] font-semibold text-brand-800">AI concierge</p>
-          <p className="mt-1 text-[12px] text-slate-600">Ask TripFlow to re-sequence Goa if the swell warning holds.</p>
-        </div>
+        <div className="mt-8 flex-1 overflow-y-auto">{links}</div>
+        <button type="button" onClick={() => navigate('/traveler/profile')} className="mt-4 flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-slate-50">
+          <Avatar initials={user?.avatarInitials ?? 'AS'} name={user?.name} className="h-9 w-9 bg-[var(--color-ocean)] text-white" />
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-ink">{user?.name ?? 'Traveler'}</span>
+            <span className="block truncate text-[12px] text-slate-500">{user?.email}</span>
+          </span>
+        </button>
       </aside>
 
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-white/90 px-4 backdrop-blur">
+      <div className="min-w-0 flex-1">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-white/90 px-4 py-3 backdrop-blur lg:px-8">
           <div className="lg:hidden">
             <Brand compact />
           </div>
-          <div className="hidden min-w-0 flex-1 md:block">
-            <Search
-              value={query}
-              onChange={setQuery}
-              onFocus={() => setPalette(true)}
-              placeholder="Search trips, stays, or ask AI"
-              className="max-w-md"
-            />
+          <p className="hidden text-sm font-medium text-slate-500 lg:block">TripFlow traveler workspace</p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPalette(true)}
+              className="flex items-center gap-2 rounded-full bg-[var(--color-charcoal)] px-4 py-2 text-sm font-semibold text-white"
+            >
+              <Sparkles className="h-4 w-4 text-[var(--color-muted-gold)]" />
+              <span className="hidden sm:inline">AI Concierge</span>
+            </button>
+            <IconButton label="Notifications" onClick={() => navigate('/traveler/notifications')}>
+              <span className="relative">
+                <Bell className="h-5 w-5" />
+                {unread ? <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[var(--color-muted-gold)]" /> : null}
+              </span>
+            </IconButton>
           </div>
-          <IconButton label="Search" className="md:hidden" onClick={() => setPalette(true)}>
-            <SearchIcon className="h-4 w-4" />
-          </IconButton>
-          <IconButton label="Notifications" onClick={() => navigate('/traveler/notifications')}>
-            <span className="relative">
-              <Bell className="h-4 w-4" />
-              {unread ? <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-rose-500" /> : null}
-            </span>
-          </IconButton>
-          <IconButton label="Help" onClick={() => setHelp(true)}>
-            <HelpCircle className="h-4 w-4" />
-          </IconButton>
-          <button type="button" onClick={() => navigate('/traveler/profile')} className="ml-1">
-            <Avatar initials={user?.avatarInitials ?? 'AS'} name={user?.name} />
-          </button>
         </header>
-        <main className="px-4 py-6 pb-24 lg:px-8 lg:pb-8">
-          <Suspense fallback={<div className="flex h-32 items-center justify-center"><p className="text-sm font-medium text-slate-400 animate-pulse">Loading...</p></div>}>
+
+        <main className="mx-auto max-w-7xl px-4 py-8 pb-24 lg:px-8 lg:pb-16">
+          <Suspense
+            fallback={
+              <div className="flex h-32 items-center justify-center">
+                <p className="animate-pulse text-sm font-medium text-[var(--color-warm-brown)]">Loading journey...</p>
+              </div>
+            }
+          >
             <Outlet />
           </Suspense>
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-white/95 px-1 py-2 backdrop-blur lg:hidden">
-        {mobileNav.map((item) => (
-          <NavLink
-            key={item.label}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
-              cn(
-                'flex flex-col items-center gap-1 rounded-lg py-1 text-[11px]',
-                isActive ? 'text-brand-700' : 'text-slate-500',
-              )
-            }
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </NavLink>
-        ))}
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-white/95 px-1 py-3 backdrop-blur lg:hidden">
+        {mobileNav.map((item) => {
+          const to = item.label === 'Live' ? liveTo : item.to
+          return (
+            <NavLink
+              key={item.label}
+              to={to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  'flex flex-col items-center gap-1 text-[11px] font-medium',
+                  isActive ? 'text-[var(--color-charcoal)]' : 'text-[var(--color-warm-brown)]',
+                )
+              }
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </NavLink>
+          )
+        })}
       </nav>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} items={commands} trips={trips} />
-      <Drawer open={help} onClose={() => setHelp(false)} title="Help">
-        <p className="text-sm text-slate-600">
-          TripFlow keeps your itinerary feasible as vendors, weather, and trains change. Use Plan to generate, Live to
-          adapt, and Review to close the loop.
-        </p>
-        <p className="meta mt-4">Press Ctrl/Cmd + K for global search.</p>
-      </Drawer>
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   )

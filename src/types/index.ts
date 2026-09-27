@@ -137,6 +137,7 @@ export interface Conflict {
   city: string
   detectedAt: string
   owner: string
+  source?: string
 }
 
 export interface TourProduct {

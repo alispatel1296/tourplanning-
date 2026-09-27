@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_AI_API_KEY?: string
   readonly VITE_GEOAPIFY_KEY?: string
   readonly VITE_CURRENCY_API_KEY?: string
+  readonly VITE_API_BASE?: string
 }
 
 interface ImportMeta {

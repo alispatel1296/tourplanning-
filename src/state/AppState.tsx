@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -27,7 +28,8 @@ import {
   persistCheckout,
   type CheckoutRecord,
 } from '@/lib/booking'
-import { createTripFromPlan, defaultPlan, loadPlan, persistPlan } from '@/lib/plan'
+import { applyLivePlanToTrip, createTripFromPlan, defaultPlan, loadPlan, persistPlan } from '@/lib/plan'
+import { fetchLiveConflicts, planLive } from '@/services/travel/TravelDataService'
 import {
   BEACH_NODE_ID,
   INDOOR_ALT_ID,
@@ -76,6 +78,9 @@ interface AppStateValue {
   markNotificationRead: (id: string) => void
   savePlan: (plan: TripPlan) => void
   generateItinerary: (plan?: TripPlan) => string
+  refreshLivePlan: (tripId: string) => Promise<void>
+  refreshLiveConflicts: (trip?: Trip) => Promise<void>
+  liveSources: string[]
   selectAlternative: (tripId: string, alternativeId: string) => void
   updateNodeStatus: (tripId: string, nodeId: string, status: Trip['nodes'][number]['status']) => void
   resolveConflict: (id: string, state?: Conflict['state']) => void
@@ -134,8 +139,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>(demoNotifications)
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const [generating, setGenerating] = useState(false)
+  const [liveSources, setLiveSources] = useState<string[]>([])
   const [plan, setPlan] = useState<TripPlan>(() => loadPlan() ?? defaultPlan)
   const [checkout, setCheckout] = useState<CheckoutRecord | null>(() => loadCheckout())
+  const generationSeq = useRef(0)
 
   // Persist custom dynamically created trips to localStorage
   useEffect(() => {
@@ -196,24 +203,140 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setPlan((current) => (JSON.stringify(current) === JSON.stringify(next) ? current : next))
   }, [])
 
+  const mergeLiveConflicts = useCallback((incoming: Conflict[], tripId: string) => {
+    setConflicts((current) => {
+      const keep = current.filter(
+        (item) => item.id === 'cf-2' || (item.tripId !== tripId && !item.id.startsWith('live-cf')),
+      )
+      return [...incoming, ...keep]
+    })
+  }, [])
+
+  const refreshLiveConflicts = useCallback(
+    async (trip?: Trip) => {
+      const target = trip ?? trips.find((item) => item.id === (activeTripId ?? 'trip-amd-goa')) ?? trips[0]
+      if (!target) return
+      const cities = [target.origin.city, ...target.destinations.map((item) => item.city)].filter(Boolean)
+      try {
+        const live = await fetchLiveConflicts({
+          tripId: target.id,
+          tripTitle: target.title,
+          cities,
+          origin: target.origin.city,
+        })
+        mergeLiveConflicts(live.conflicts, target.id)
+        setLiveSources((current) => [...new Set([...current, ...live.sources])])
+      } catch {
+        /* keep last desk */
+      }
+    },
+    [activeTripId, mergeLiveConflicts, trips],
+  )
+
   const generateItinerary = useCallback(
     (nextPlan?: TripPlan): string => {
       const resolved = nextPlan ?? plan
       persistPlan(resolved)
       setPlan(resolved)
-      // Create a brand-new, dynamically generated Trip object with a unique ID
       const newTrip = createTripFromPlan(resolved)
       setTrips((current) => [newTrip, ...current.filter((t) => t.id !== newTrip.id)])
       setActiveTripId(newTrip.id)
       setGenerating(true)
-      pushToast({ title: 'AI is generating your itinerary', body: 'Simulating, checking, then optimizing the circuit.' })
-      window.setTimeout(() => {
-        setGenerating(false)
-        pushToast({ title: 'Itinerary optimized', body: `${resolved.destinations.join(' · ') || 'Trip'} scored 94% feasible.` })
-      }, 4200)
+      const seq = ++generationSeq.current
+      pushToast({
+        title: 'Live itinerary composing',
+        body: 'SerpApi, AviationStack, RailRadar, and OpenRouter are assembling the circuit.',
+      })
+      void (async () => {
+        try {
+          const live = await planLive({
+            origin: resolved.origin,
+            destinations: resolved.destinations,
+            startDate: resolved.startDate,
+            endDate: resolved.endDate,
+            adults: resolved.adults,
+            budget: resolved.budget,
+            styles: resolved.styles,
+            transport: resolved.transport,
+            accommodation: resolved.accommodation,
+            brief: resolved.brief,
+          })
+          if (generationSeq.current !== seq) return
+          sessionStorage.setItem('tf-live-plan', JSON.stringify(live))
+          setLiveSources(live.sources)
+          setTrips((current) =>
+            current.map((trip) => (trip.id === newTrip.id ? applyLivePlanToTrip(trip, live) : trip)),
+          )
+          const cities = [resolved.origin, ...resolved.destinations]
+          const desk = await fetchLiveConflicts({
+            tripId: newTrip.id,
+            tripTitle: live.title || newTrip.title,
+            cities,
+            origin: resolved.origin,
+          })
+          if (generationSeq.current !== seq) return
+          mergeLiveConflicts(desk.conflicts, newTrip.id)
+          setLiveSources((current) => [...new Set([...current, ...desk.sources])])
+          pushToast({
+            title: 'Itinerary optimized',
+            body: `${live.title} scored ${live.feasibility}% feasible from ${live.sources.join(', ') || 'live search'}.`,
+          })
+        } catch {
+          if (generationSeq.current !== seq) return
+          pushToast({
+            title: 'Live compose fell back',
+            body: 'Showing the structured circuit. Retry generate if search recovers.',
+          })
+        } finally {
+          if (generationSeq.current === seq) setGenerating(false)
+        }
+      })()
       return newTrip.id
     },
-    [plan, pushToast, setActiveTripId],
+    [mergeLiveConflicts, plan, pushToast, setActiveTripId],
+  )
+
+  const refreshLivePlan = useCallback(
+    async (tripId: string) => {
+      const trip = trips.find((item) => item.id === tripId)
+      if (!trip) return
+      setGenerating(true)
+      pushToast({
+        title: 'Live flow composing',
+        body: `Retrieving flights, stays, and places for ${trip.destinations.map((item) => item.city).join(', ') || trip.route}.`,
+      })
+      try {
+        const dests = trip.destinations.map((item) => item.city)
+        const live = await planLive({
+          origin: trip.origin.city,
+          destinations: dests.length ? dests : [trip.route.split('→').pop()?.trim() ?? trip.origin.city],
+          startDate: trip.startDate,
+          endDate: trip.endDate,
+          adults: trip.adults,
+          budget: trip.budget,
+          styles: trip.travelStyle,
+          transport: trip.transport[0] ?? 'Mixed',
+          accommodation: trip.accommodation,
+          brief: `${trip.title}. ${trip.route}. Day 1 outbound flight from ${trip.origin.city}, then hotel, then timed places so the map can pin each stop.`,
+        })
+        setLiveSources(live.sources)
+        setTrips((current) =>
+          current.map((item) => (item.id === tripId ? applyLivePlanToTrip(item, live) : item)),
+        )
+        pushToast({
+          title: 'Live flow ready',
+          body: `${live.nodes.length} timed stops from ${live.sources.join(', ') || 'live search'}.`,
+        })
+      } catch {
+        pushToast({
+          title: 'Live compose paused',
+          body: 'Keeping the current circuit. Try Rebuild live flow again.',
+        })
+      } finally {
+        setGenerating(false)
+      }
+    },
+    [pushToast, trips],
   )
 
   const enterLiveTrip = useCallback((tripId: string) => {
@@ -377,6 +500,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       notifications,
       toasts,
       generating,
+      liveSources,
       plan,
       checkout,
       signIn: (next, profile) => {
@@ -399,6 +523,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ),
       savePlan,
       generateItinerary,
+      refreshLivePlan,
+      refreshLiveConflicts,
       selectAlternative: (tripId, alternativeId) => {
         setTrips((current) =>
           current.map((trip) =>
@@ -570,7 +696,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       resetDemoJourney,
       commitBuiltTrip,
     }),
-    [user, role, trips, activeTripId, setActiveTripId, bookings, conflicts, notifications, toasts, generating, plan, checkout, pushToast, dismissToast, savePlan, generateItinerary, enterLiveTrip, markNodeVisited, applyLiveReroute, keepLivePlan, completeTrip, resetDemoJourney, commitBuiltTrip],
+    [user, role, trips, activeTripId, setActiveTripId, bookings, conflicts, notifications, toasts, generating, liveSources, plan, checkout, pushToast, dismissToast, savePlan, generateItinerary, refreshLivePlan, refreshLiveConflicts, enterLiveTrip, markNodeVisited, applyLiveReroute, keepLivePlan, completeTrip, resetDemoJourney, commitBuiltTrip],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

@@ -1,53 +1,34 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CloudRain, CloudSun, Radio, TriangleAlert, Navigation, CheckCircle2 } from 'lucide-react'
+import { CloudRain, CloudSun, TriangleAlert, Navigation, ArrowRight, MapPin, CheckCircle2 } from 'lucide-react'
 import { getCurrentWeather } from '@/services/weather/weather'
 import { detectWeatherSignal, runDisruptionPipeline, simulationSignal, type DisruptionProposal } from '@/services/disruption/disruption'
-import { haversineKm, requestOnce, watchLive, type UserFix } from '@/services/location/location'
+import { haversineKm, requestOnce, type UserFix } from '@/services/location/location'
 import { seedLookup } from '@/services/geo/seeds'
-import { formatDistance, formatDuration } from '@/services/maps/routing'
+import { formatDistance } from '@/services/maps/routing'
 import type { WeatherNow } from '@/services/geo/types'
 import { Button } from '@/components/ui/Button'
-import { Drawer } from '@/components/ui/Overlay'
-import { EmptyState } from '@/components/ui/Feedback'
-import { useAppState } from '@/state/AppState'
-import { formatINR, cn } from '@/lib/cn'
-import { DEMO_BOOKING_ID } from '@/lib/booking'
-import { coordinatorRohan } from '@/data/demo'
-import { LiveFlow } from '@/pages/traveler/live/LiveFlow'
 import { LiveMap } from '@/pages/traveler/live/LiveMap'
-import { SosButton, SosModal } from '@/pages/traveler/live/SosModal'
-import {
-  INDOOR_ALT_ID,
-  LIVE_DAYS,
-  clockFor,
-  liveDay,
-  nextActionLabel,
-  remainingBudget,
-} from '@/pages/traveler/live/model'
+import { useAppState } from '@/state/AppState'
+import { INDOOR_ALT_ID, liveDay } from '@/pages/traveler/live/model'
 
 export function LiveTrip() {
   const { id } = useParams()
   const {
     trips,
-    checkout,
     enterLiveTrip,
     markNodeVisited,
     applyLiveReroute,
     keepLivePlan,
     pushToast,
-    signIn,
   } = useAppState()
   const trip = trips.find((item) => item.id === id) ?? trips[0]
   const navigate = useNavigate()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  
   const [disruption, setDisruption] = useState<'idle' | 'open' | 'accepted'>('idle')
-  const [sos, setSos] = useState(false)
   const [weather, setWeather] = useState<WeatherNow | null>(null)
   const [weatherAlert, setWeatherAlert] = useState<DisruptionProposal | null>(null)
   const [fix, setFix] = useState<UserFix | null>(null)
-  const [liveShare, setLiveShare] = useState(false)
-  const [locError, setLocError] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) enterLiveTrip(id)
@@ -90,15 +71,6 @@ export function LiveTrip() {
       .catch(() => setWeather(null))
   }, [trip?.id, current?.city])
 
-  useEffect(() => {
-    if (!liveShare) return
-    const stop = watchLive(setFix, (message) => {
-      setLocError(message)
-      setLiveShare(false)
-    })
-    return stop
-  }, [liveShare])
-
   const next = useMemo(() => {
     if (!current)
       return nodes.find((node) => node.status === 'upcoming' || node.status === 'alternative') ?? null
@@ -106,38 +78,21 @@ export function LiveTrip() {
     return nodes.slice(index + 1).find((node) => node.status !== 'visited' && node.status !== 'disrupted') ?? null
   }, [nodes, current])
 
-  const selected = nodes.find((node) => node.id === selectedId) ?? current
-  const raining = disruption !== 'idle'
-  const remaining = trip ? remainingBudget(trip) : 0
   const nextPin = next ? seedLookup(next.city) ?? seedLookup(next.title) : null
   const nextKm = fix && nextPin ? haversineKm(fix, nextPin) : null
 
-  if (!trip) {
+  if (!trip || !nodes.length) {
     return (
-      <EmptyState
-        icon={<Radio className="h-5 w-5" />}
-        title="Live trip unavailable"
-        body="Start from My Trips to open a circuit."
-        action={<Button type="button" onClick={() => navigate('/traveler/trips')}>My trips</Button>}
-      />
-    )
-  }
-
-  if (!nodes.length) {
-    return (
-      <EmptyState
-        icon={<Radio className="h-5 w-5" />}
-        title="This trip is not live yet"
-        body="Generate and confirm the itinerary first, then open the live companion."
-        action={<Button type="button" onClick={() => navigate('/traveler/plan')}>Plan this trip</Button>}
-      />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+        <p className="font-display text-2xl text-[var(--color-charcoal)] mb-4">Trip not ready</p>
+        <Button type="button" onClick={() => navigate('/traveler/plan')}>Plan this trip</Button>
+      </div>
     )
   }
 
   const simulate = () => {
     applyLiveReroute(trip.id, current?.id ?? next?.id ?? trip.nodes[0].id, 'stage')
     setDisruption('open')
-    setSelectedId(current?.id ?? next?.id ?? trip.nodes[0].id)
     const fake = simulationSignal(current?.id ?? next?.id ?? trip.nodes[0].id)
     pushToast({ title: fake.title, body: fake.body })
   }
@@ -145,347 +100,188 @@ export function LiveTrip() {
   const accept = () => {
     applyLiveReroute(trip.id, current?.id ?? next?.id ?? trip.nodes[0].id, 'accept')
     setDisruption('accepted')
-    setSelectedId(INDOOR_ALT_ID)
   }
 
   const keep = () => {
     keepLivePlan(trip.id)
     setDisruption('idle')
-    setSelectedId(current?.id ?? next?.id ?? trip.nodes[0].id)
     pushToast({ title: 'Original plan kept', body: 'Baga water sports stays on the live path.' })
   }
 
   return (
-    <div className="-mx-4 -mt-4 flex min-h-[calc(100vh-4rem)] flex-col bg-[#101823] text-[#F3EFE7] lg:-mx-8 overflow-hidden">
-      {/* ── Top Bar: Live Mission Control ────────────────────────────── */}
-      <div className="sticky top-0 z-30 border-b border-slate-800 bg-[#16212F]/95 px-6 py-3.5 backdrop-blur-md shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3FA772] text-white shadow-md animate-pulse">
-              <Radio className="h-5 w-5" />
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-[#3FA772]/20 border border-[#3FA772]/40 px-2 py-0.5 text-[10px] font-extrabold uppercase text-[#3FA772]">
-                  Live Companion Active
-                </span>
-                <span className="text-xs text-slate-400 font-semibold">{trip.title}</span>
-              </div>
-              <h1 className="font-display text-lg font-extrabold text-[#F3EFE7] mt-0.5">
-                Day {liveDay(trip)} of {LIVE_DAYS} · {current?.city ?? 'Goa'}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-type="button"               size="sm"
-              variant="secondary"
-              className="bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
-              disabled={disruption !== 'idle'}
-              onClick={simulate}
-            >
-              Simulate Weather Reroute
-            </Button>
-            <Button
-type="button"               size="sm"
-              variant="secondary"
-              className="bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
-              onClick={async () => {
-                try {
-                  setLocError(null)
-                  const once = await requestOnce()
-                  setFix(once)
-                  pushToast({ title: 'GPS position acquired', body: `${once.lat.toFixed(3)}, ${once.lng.toFixed(3)}` })
-                } catch (error) {
-                  setLocError(error instanceof Error ? error.message : 'Location permission denied.')
-                }
-              }}
-            >
-              <Navigation className="h-3.5 w-3.5 text-[#3FA772]" />
-              Use My Location
-            </Button>
-            <Button
-type="button"               size="sm"
-              variant="secondary"
-              className={cn(
-                'border-slate-700 font-bold',
-                liveShare ? 'bg-[#3FA772] text-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700',
-              )}
-              onClick={() => {
-                setLiveShare((v) => {
-                  if (v) setFix(null)
-                  return !v
-                })
-              }}
-            >
-              {liveShare ? 'Live Location On ✓' : 'Enable Live GPS'}
-            </Button>
-            <Button
-type="button"               size="sm"
-              variant="ghost"
-              className="text-slate-300 hover:bg-slate-800 hover:text-white"
-              onClick={() => navigate(`/traveler/trips/${trip.id}`)}
-            >
-              Planning Canvas
-            </Button>
-          </div>
+    <div className="mx-auto max-w-5xl space-y-12 animate-in fade-in duration-500">
+      {/* Editorial Header */}
+      <div className="text-center space-y-3 pt-6">
+        <div className="inline-flex items-center gap-2 mb-2">
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          </span>
+          <p className="meta tracking-[0.2em] text-red-600 font-bold">YOU'RE ON THE MOVE</p>
         </div>
-
-        {/* Live Metrics Header Bar */}
-        <div className="mt-3.5 grid grid-cols-2 gap-3 rounded-xl border border-slate-800 bg-[#101823] p-3 text-xs sm:grid-cols-3 lg:grid-cols-6">
-          <Stat label="Current Stop" value={current?.city ?? 'Goa'} />
-          <Stat
-            label="Next Up"
-            value={
-              disruption === 'open'
-                ? 'Beach Activity'
-                : nextActionLabel(current?.status === 'active' ? current : next ?? current ?? undefined)
-            }
-          />
-          <Stat label="Scheduled Time" value={clockFor(current ?? undefined)} />
-          <Stat
-            label="Weather Signal"
-            value={
-              weather
-                ? `${weather.temperatureC}°C · ${weather.condition}`
-                : raining
-                ? '24°C · Rain'
-                : 'Loading…'
-            }
-            icon={
-              weather && weather.precipitationProbability >= 55 ? (
-                <CloudRain className="h-3.5 w-3.5 text-sky-400" />
-              ) : (
-                <CloudSun className="h-3.5 w-3.5 text-amber-400" />
-              )
-            }
-          />
-          <Stat label="Remaining Budget" value={formatINR(remaining)} highlight />
-          <Stat label="Live Coordinator" value={coordinatorRohan.name.split(' ')[0]} />
-        </div>
+        <h1 className="font-display text-5xl md:text-7xl text-[var(--color-charcoal)] font-medium tracking-tight">
+          {current?.city ?? 'Goa'} <span className="text-[var(--color-muted-gold)] font-serif italic">· Day {liveDay(trip)}</span>
+        </h1>
       </div>
 
-      {/* Weather Reroute Alerts */}
+      {/* Disruption Alert / Recovery Flow */}
       {weatherAlert && disruption === 'idle' ? (
-        <div className="mx-6 mt-4 rounded-2xl border border-[#E0A63A]/50 bg-[#E0A63A]/10 p-4 text-[#F3EFE7]">
-          <div className="flex items-start gap-3">
-            <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-[#E0A63A]" />
-            <div>
-              <p className="font-bold text-[#F3EFE7]">{weatherAlert.signal.title}</p>
-              <p className="mt-0.5 text-xs text-slate-300">{weatherAlert.signal.body}</p>
+        <div className="bg-[var(--color-charcoal)] text-white rounded-[2rem] p-8 md:p-10 shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-red-900/20" />
+          <div className="relative z-10 text-center space-y-6">
+            <TriangleAlert className="h-10 w-10 text-red-400 mx-auto" />
+            <h2 className="font-display text-3xl font-medium">WEATHER CHANGE</h2>
+            <p className="text-lg text-white/90">
+              {weatherAlert.signal.title}.<br />
+              Your {current?.title ?? 'next visit'} may be affected.
+            </p>
+            <div className="pt-4 border-t border-white/20">
+              <p className="text-sm tracking-[0.1em] text-[var(--color-muted-gold)] uppercase mb-6">VoyageOS found a better sequence.</p>
+              <Button type="button" className="bg-white text-[var(--color-charcoal)] hover:bg-[var(--color-warm-ivory)] px-8 py-3 rounded-full font-bold" onClick={simulate}>
+                REVIEW NEW PLAN
+              </Button>
             </div>
           </div>
-          <Button
-type="button"             size="sm"
-            className="mt-3 bg-[#E0A63A] hover:bg-[#c9922e] text-slate-950 font-extrabold"
-            onClick={() => {
-              applyLiveReroute(trip.id, current?.id ?? next?.id ?? trip.nodes[0].id, 'stage')
-              setDisruption('open')
-              setSelectedId(current?.id ?? next?.id ?? trip.nodes[0].id)
-            }}
-          >
-            Stage AI Reroute Alternative
-          </Button>
-        </div>
-      ) : null}
-
-      {locError && <p className="mx-6 mt-3 text-xs text-[#C96A4B]">{locError}</p>}
-
-      {fix && nextKm != null ? (
-        <div className="mx-6 mt-3 flex items-center gap-2 rounded-xl border border-[#3FA772]/30 bg-[#3FA772]/10 px-4 py-2 text-xs font-semibold text-[#3FA772]">
-          <Navigation className="h-4 w-4" />
-          <span>
-            GPS Position Acquired · {formatDistance(nextKm * 1000)} to {next?.title ?? 'next stop'}
-            {nextKm > 0 ? ` · approx ${formatDuration((nextKm / 35) * 3600)} drive` : ''}
-          </span>
         </div>
       ) : null}
 
       {disruption === 'open' ? (
-        <div className="mx-6 mt-4 rounded-2xl border border-[#C96A4B]/60 bg-[#C96A4B]/15 p-4 text-[#F3EFE7]">
-          <div className="flex items-start gap-3">
-            <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-[#C96A4B]" />
+        <div className="bg-[var(--color-charcoal)] text-white rounded-[2rem] p-8 md:p-10 shadow-2xl">
+          <div className="text-center space-y-8">
             <div>
-              <p className="font-bold text-base text-[#F3EFE7]">Weather Disruption Staged</p>
-              <p className="mt-0.5 text-xs text-slate-300">
-                Heavy rain expected near Baga Beach. Replace outdoor activity with indoor food experience.
-              </p>
+              <h2 className="font-display text-3xl font-medium mb-2">YOUR JOURNEY CHANGED</h2>
+              <p className="text-lg text-red-400">Weather disruption near Baga Beach.</p>
             </div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" size="sm" className="bg-[#3FA772] hover:bg-[#32895d] text-white font-bold" onClick={accept}>
-              Accept Update to Green Path
-            </Button>
-            <Button type="button" size="sm" variant="secondary" className="bg-slate-800 text-slate-200 border-slate-700" onClick={keep}>
-              Keep Original Outdoor Plan
-            </Button>
+            
+            <div className="grid sm:grid-cols-2 gap-4 text-left">
+              <div className="bg-white/10 p-6 rounded-2xl border border-white/10 hover:bg-white/20 transition cursor-pointer" onClick={accept}>
+                <p className="meta text-[var(--color-muted-gold)] mb-2">OPTION A</p>
+                <p className="font-sans text-xl font-medium mb-4">Replace activity</p>
+                <div className="space-y-1 text-sm text-white/80">
+                  <p>+ ₹850 additional cost</p>
+                  <p>45 min saved</p>
+                </div>
+              </div>
+              <div className="bg-white/5 p-6 rounded-2xl border border-white/10 hover:bg-white/10 transition cursor-pointer" onClick={keep}>
+                <p className="meta text-white/50 mb-2">OPTION B</p>
+                <p className="font-sans text-xl font-medium mb-4 text-white/80">Keep original plan</p>
+                <div className="space-y-1 text-sm text-red-400/80">
+                  <p>High timing risk</p>
+                  <p>High weather risk</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
 
       {disruption === 'accepted' ? (
-        <div className="mx-6 mt-4 rounded-2xl border border-[#3FA772]/60 bg-[#3FA772]/15 p-4 text-[#F3EFE7]">
-          <p className="font-bold text-base text-[#F3EFE7]">Reroute Accepted & Live</p>
-          <p className="mt-0.5 text-xs text-slate-300">
-            Indoor food is now on the green live path. Horizon Trails operator desk synced.
+        <div className="bg-[var(--color-ocean)] text-white rounded-[2rem] p-8 md:p-10 shadow-2xl text-center">
+          <CheckCircle2 className="h-10 w-10 text-[var(--color-muted-gold)] mx-auto mb-4" />
+          <h2 className="font-display text-3xl font-medium mb-2">JOURNEY RECOVERED</h2>
+          <p className="text-lg text-white/90">
+            Indoor food is now on the live path.
           </p>
-          <Button
-type="button"             size="sm"
-            className="mt-3 bg-[#3FA772] hover:bg-[#32895d] text-white"
-            onClick={() => {
-              signIn('operator')
-              navigate('/operator')
-            }}
-          >
-            Switch to Operator Portal
-          </Button>
+          <div className="mt-8 flex justify-center gap-8 text-sm font-medium tracking-wide text-white/80">
+            <span>5 activities preserved</span>
+            <span>₹850 additional cost</span>
+            <span>45 min recovered</span>
+          </div>
         </div>
       ) : null}
 
-      {/* Main Surface: Stream Flow + Map Sidebar */}
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[7fr_3fr]">
-        <div className="min-h-[480px] border-b border-slate-800 lg:border-r lg:border-b-0">
-          <LiveFlow nodes={nodes} selectedId={selectedId ?? current?.id ?? null} onSelect={setSelectedId} />
+      <LiveMap nodes={nodes} current={current} next={next} selectedId={current?.id ?? next?.id} userLocation={fix} />
+
+      {/* Up Next & Weather */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-sm border border-[var(--color-soft-sand)]">
+          <p className="meta tracking-widest mb-6">NEXT</p>
+          <div className="space-y-2 mb-8">
+            <h3 className="font-display text-4xl text-[var(--color-charcoal)]">{next?.time ?? '16:30'}</h3>
+            <p className="font-sans text-xl font-medium text-[var(--color-warm-brown)]">{next?.title ?? 'Fort Aguada'}</p>
+            <p className="text-sm font-medium text-[var(--color-charcoal)]/50 flex items-center gap-1 mt-2">
+              <Navigation className="h-4 w-4" /> {nextKm ? `${formatDistance(nextKm * 1000)} away` : '12 min away'}
+            </p>
+          </div>
+          <Button type="button" className="w-full bg-[var(--color-charcoal)] text-white hover:bg-[var(--color-charcoal)]/90 rounded-full"
+            onClick={async () => {
+              if (!fix) {
+                const once = await requestOnce().catch(() => null)
+                setFix(once)
+              }
+            }}
+          >
+            Navigate
+          </Button>
         </div>
 
-        {/* Sidebar: Map & Selected Node Actions */}
-        <aside className="space-y-4 overflow-y-auto p-4 app-scrollbar bg-[#16212F]">
-          <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
-            Live Companion Map
-          </p>
-          <LiveMap
-            nodes={nodes}
-            current={current}
-            next={next}
-            selectedId={selectedId ?? current?.id ?? null}
-            userLocation={fix}
-            onSelect={setSelectedId}
-          />
-
-          <div className="rounded-2xl border border-slate-800 bg-[#101823] p-4 text-[#F3EFE7]">
-            <p className="font-bold text-base">{selected?.title ?? 'Select a node'}</p>
-            <p className="text-xs font-medium text-[#3FA772] mt-0.5">
-              {selected?.city} · {selected?.time}
-            </p>
-            <p className="mt-2 text-xs text-slate-300 leading-relaxed">{selected?.notes}</p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {selected && selected.status !== 'visited' && selected.status !== 'disrupted' ? (
-                <Button
-type="button"                   size="sm"
-                  className="w-full bg-[#3FA772] hover:bg-[#32895d] text-white font-bold"
-                  onClick={() => {
-                    markNodeVisited(trip.id, selected.id)
-                    pushToast({
-                      title: 'Marked as visited',
-                      body: `${selected.title} closed. Position advanced to next stop.`,
-                    })
-                    setSelectedId(null)
-                  }}
-                  icon={<CheckCircle2 className="h-4 w-4" />}
-                >
-                  Mark as Visited
-                </Button>
-              ) : selected?.status === 'visited' ? (
-                <p className="w-full text-xs font-bold text-[#3FA772]">✓ Visited Stop</p>
-              ) : null}
-
-              <Button
-type="button"                 size="sm"
-                variant="secondary"
-                className="w-full bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
-                onClick={() => navigate('/traveler/plan/build')}
-              >
-                Custom Hop Builder
-              </Button>
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      {/* Node Detail Drawer */}
-      <Drawer
-        open={Boolean(selectedId && selected)}
-        onClose={() => setSelectedId(null)}
-        title={selected?.title ?? 'Node'}
-      >
-        {selected ? (
-          <div className="space-y-3 text-[#F3EFE7]">
-            <p className="text-xs text-slate-300">{selected.notes}</p>
-            <p className="text-xs font-semibold text-[#3FA772]">
-              {selected.city} · {selected.time} · Day {selected.day}
-            </p>
-            {selected.status === 'visited' ? (
-              <p className="text-xs font-bold text-[#3FA772]">✓ Visited</p>
-            ) : selected.status !== 'disrupted' ? (
-              <Button
-type="button"                 className="w-full bg-[#3FA772] hover:bg-[#32895d] text-white font-bold mt-2"
-                onClick={() => {
-                  markNodeVisited(trip.id, selected.id)
-                  pushToast({
-                    title: 'Marked as visited',
-                    body: `${selected.title} closed. Next stop is now active.`,
-                  })
-                  setSelectedId(null)
-                }}
-              >
-                Mark as Visited
-              </Button>
+        <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-sm border border-[var(--color-soft-sand)] flex flex-col justify-between">
+          <p className="meta tracking-widest mb-6">WEATHER</p>
+          <div className="flex items-center gap-6">
+            <h4 className="font-display text-7xl text-[var(--color-charcoal)] leading-none">
+              {weather ? `${weather.temperatureC}°` : '29°'}
+            </h4>
+            {weather && weather.precipitationProbability > 50 ? (
+              <CloudRain className="h-12 w-12 text-[var(--color-ocean)]" />
             ) : (
-              <p className="text-xs text-[#C96A4B]">Held as a historical disruption on the live path.</p>
+              <CloudSun className="h-12 w-12 text-[var(--color-muted-gold)]" />
             )}
           </div>
-        ) : null}
-      </Drawer>
+          <div className="mt-8 pt-6 border-t border-[var(--color-soft-sand)]">
+            <p className="font-medium text-[var(--color-warm-brown)] text-lg">
+              {weatherAlert ? 'Rain possible at 18:00' : (weather?.condition ?? 'Partly cloudy')}
+            </p>
+          </div>
+        </div>
+      </div>
 
-      {/* Terracotta SOS Button & Modal */}
-      <SosButton onOpen={() => setSos(true)} />
-      <SosModal
-        open={sos}
-        trip={trip}
-        location={`${current?.city ?? 'Goa'} · ${current?.title ?? 'live fix'}`}
-        bookingId={checkout?.bookingId ?? DEMO_BOOKING_ID}
-        onClose={() => setSos(false)}
-        onCall={() => {
-          setSos(false)
-          pushToast({
-            title: 'Calling coordinator',
-            body: `${coordinatorRohan.name} · ${coordinatorRohan.phone}.`,
-          })
-        }}
-        onAlert={() => {
-          setSos(false)
-          pushToast({ title: 'Alert sent', body: 'Horizon Trails desk received your live SOS signal.' })
-        }}
-      />
-    </div>
-  )
-}
-
-function Stat({
-  label,
-  value,
-  icon,
-  highlight,
-}: {
-  label: string
-  value: string
-  icon?: ReactNode
-  highlight?: boolean
-}) {
-  return (
-    <div>
-      <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">{label}</p>
-      <p
-        className={cn(
-          'mt-1 flex items-center gap-1 text-xs font-extrabold truncate',
-          highlight ? 'text-[#3FA772]' : 'text-[#F3EFE7]',
-        )}
-      >
-        {icon}
-        {value}
-      </p>
+      {/* Live Timeline */}
+      <div className="pt-8">
+        <h3 className="section-title text-center mb-12">LIVE JOURNEY</h3>
+        <div className="max-w-2xl mx-auto space-y-6">
+          {nodes.filter(n => n.status !== 'alternative' && n.status !== 'disrupted').map((node, i, arr) => (
+            <div key={node.id} className="flex gap-6 items-start group">
+              <div className="flex flex-col items-center relative mt-1">
+                {node.status === 'visited' ? (
+                  <div className="h-6 w-6 rounded-full bg-[var(--color-muted-gold)] flex items-center justify-center z-10">
+                    <CheckCircle2 className="h-4 w-4 text-white" />
+                  </div>
+                ) : node.status === 'active' ? (
+                  <div className="h-6 w-6 rounded-full bg-[var(--color-ocean)] border-[4px] border-[var(--color-surface)] z-10 shadow-sm flex items-center justify-center">
+                     <ArrowRight className="h-3 w-3 text-white" />
+                  </div>
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-[var(--color-soft-sand)] bg-white z-10 my-1" />
+                )}
+                {i < arr.length - 1 && (
+                  <div className="absolute top-6 bottom-[-24px] w-[2px] bg-[var(--color-soft-sand)]" />
+                )}
+              </div>
+              
+              <div className={`flex-1 pb-6 ${node.status === 'visited' ? 'opacity-50' : ''}`}>
+                <div className="flex items-baseline justify-between mb-1">
+                  <h4 className="font-sans text-xl font-medium text-[var(--color-charcoal)]">{node.title}</h4>
+                  <span className="font-display text-lg text-[var(--color-warm-brown)]">{node.time}</span>
+                </div>
+                <div className="flex items-center gap-4 text-sm font-medium text-[var(--color-charcoal)]/60">
+                  <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {node.city}</span>
+                </div>
+                
+                {node.status === 'active' && (
+                  <Button type="button" variant="outline" size="sm" className="mt-4 rounded-full border-[var(--color-soft-sand)] text-[var(--color-ocean)]"
+                    onClick={() => {
+                      markNodeVisited(trip.id, node.id)
+                      pushToast({ title: 'Marked as visited', body: `${node.title} closed.` })
+                    }}
+                  >
+                    Mark as Visited
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

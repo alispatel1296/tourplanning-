@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  Car,
   Check,
   Compass,
   Hotel,
@@ -15,26 +14,27 @@ import { nodeDuration, type CanvasView, type PathMode } from '@/pages/traveler/f
 import { nodeImage, type VisualBranch } from '@/pages/traveler/flow/dossier'
 import type { TripNode } from '@/types'
 
-const CARD_W = 240
-const CARD_H = 114
-const COL = 88
-const ROW = 270
-const ALT = 140
-const PAD = 48
-
 const FALLBACK_IMG =
   'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=70'
 
-// Design Tokens
 const TYPE_CONFIG: Record<
   TripNode['category'],
-  { label: string; color: string; bg: string; icon: typeof Car }
+  { label: string; color: string; bg: string; icon: typeof Hotel }
 > = {
-  transport: { label: 'Transport', color: '#4C8FE0', bg: 'rgba(76, 143, 224, 0.15)', icon: TrainFront },
-  stay: { label: 'Hotel', color: '#8C6FE0', bg: 'rgba(140, 111, 224, 0.15)', icon: Hotel },
-  food: { label: 'Eatery', color: '#E0895C', bg: 'rgba(224, 137, 92, 0.15)', icon: UtensilsCrossed },
-  activity: { label: 'Activity', color: '#4FBF8C', bg: 'rgba(79, 191, 140, 0.15)', icon: Waves },
-  free: { label: 'Explore', color: '#E0C24C', bg: 'rgba(224, 194, 76, 0.15)', icon: Compass },
+  transport: { label: 'Move', color: '#7EB6FF', bg: 'rgba(126, 182, 255, 0.16)', icon: TrainFront },
+  stay: { label: 'Stay', color: '#C4B5FD', bg: 'rgba(196, 181, 253, 0.16)', icon: Hotel },
+  food: { label: 'Eat', color: '#F0B27A', bg: 'rgba(240, 178, 122, 0.16)', icon: UtensilsCrossed },
+  activity: { label: 'Do', color: '#6EE7B7', bg: 'rgba(110, 231, 183, 0.16)', icon: Waves },
+  free: { label: 'Free', color: '#FDE68A', bg: 'rgba(253, 230, 138, 0.16)', icon: Compass },
+}
+
+function roleOf(node: TripNode, nodes: TripNode[]) {
+  if (node.status === 'visited') return 'done' as const
+  if (node.status === 'active') return 'now' as const
+  if (node.status === 'disrupted') return 'hold' as const
+  const next = nodes.find((item) => item.status === 'upcoming')
+  if (next?.id === node.id) return 'next' as const
+  return 'later' as const
 }
 
 export function FlowCanvas({
@@ -58,355 +58,259 @@ export function FlowCanvas({
   onAdd: (afterId: string) => void
   onSelectBranch: (branch: VisualBranch) => void
 }) {
-  const main = nodes.filter((node) => node.status !== 'alternative')
-  const days = groupDays(main)
-  const placed = layout(days, branches)
-  const width = Math.max(900, ...placed.map((item) => item.x + CARD_W + PAD + 140))
-  const height = Math.max(540, ...placed.map((item) => item.y + CARD_H + ALT + PAD))
+  const main = useMemo(() => nodes.filter((node) => node.status !== 'alternative'), [nodes])
+  const days = useMemo(() => groupDays(main), [main])
 
   if (view === 'timeline') {
     return (
-      <div className="overflow-auto p-4 app-scrollbar bg-[#101823] min-h-[500px]">
-        <div className="flex min-w-max items-start gap-0">
-          {main.map((node, index) => (
-            <div key={node.id} className="flex items-center">
-              <GraphCard
-                node={node}
-                selected={selectedId === node.id}
-                onSelect={() => onSelect(node.id)}
-              />
-              {index < main.length - 1 ? (
-                <EdgePlus horizontal green onAdd={() => onAdd(node.id)} />
-              ) : null}
-            </div>
-          ))}
-        </div>
+      <div className="space-y-4 overflow-auto p-4">
+        <Legend />
+        {main.map((node, index) => (
+          <div key={node.id} className="flex items-start gap-3">
+            <StoryCard
+              node={node}
+              role={roleOf(node, main)}
+              selected={selectedId === node.id}
+              onSelect={() => onSelect(node.id)}
+            />
+            {index < main.length - 1 ? (
+              <button
+                type="button"
+                aria-label="Add hop after this node"
+                onClick={() => onAdd(node.id)}
+                className="mt-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/40 text-emerald-300"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+        ))}
       </div>
     )
   }
 
   return (
-    <div
-      className={cn(
-        'relative min-h-[620px] overflow-auto app-scrollbar bg-[#101823] text-[#F3EFE7]',
-        view === 'map' && 'bg-[#101823]',
-      )}
-    >
-      {/* Travel Map Grid Base */}
+    <div className="relative min-h-[620px] overflow-auto bg-[#0b1220] text-[#F3EFE7]">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage: 'radial-gradient(rgba(243, 239, 231, 0.08) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
+          backgroundImage:
+            'radial-gradient(rgba(243, 239, 231, 0.05) 1px, transparent 1px), linear-gradient(180deg, rgba(63,167,114,0.08), transparent 280px)',
+          backgroundSize: '22px 22px, 100% 100%',
         }}
       />
 
-      <div className="relative origin-top-left p-2" style={{ width, height, transform: `scale(${zoom})` }}>
-        <svg className="pointer-events-none absolute inset-0" width={width} height={height} aria-hidden>
-          <defs>
-            <marker id="tf-arrow-green" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
-              <path d="M0 0 L9 4.5 L0 9 Z" fill="#3FA772" />
-            </marker>
-            <marker id="tf-arrow-yellow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
-              <path d="M0 0 L9 4.5 L0 9 Z" fill="#E0A63A" />
-            </marker>
-          </defs>
+      <div className="relative origin-top-left p-5" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
+        <Legend />
 
-          {/* Green active path connections (same-day) */}
-          {days.flatMap((day) =>
-            day.nodes.slice(0, -1).map((node, index) => {
-              const from = placed.find((item) => item.id === node.id)
-              const to = placed.find((item) => item.id === day.nodes[index + 1].id)
-              if (!from || !to) return null
-              return (
-                <path
-                  key={`${node.id}-${to.id}`}
-                  d={elbow(from.x + CARD_W, from.y + CARD_H / 2, to.x, to.y + CARD_H / 2)}
-                  fill="none"
-                  stroke="#3FA772"
-                  strokeWidth="3"
-                  markerEnd="url(#tf-arrow-green)"
-                />
-              )
-            }),
-          )}
-
-          {/* Green active path connections (Day N to Day N+1 transition) */}
-          {days.slice(0, -1).map((day, index) => {
-            const fromNode = day.nodes[day.nodes.length - 1]
-            const toNode = days[index + 1]?.nodes[0]
-            const from = fromNode && placed.find((item) => item.id === fromNode.id)
-            const to = toNode && placed.find((item) => item.id === toNode.id)
-            if (!from || !to) return null
+        <div className="mt-5 flex min-w-max items-start gap-4 pb-8">
+          {days.map((day, dayIndex) => {
+            const city = day.nodes[0]?.city ?? ''
+            const date = day.nodes[0]?.date
+            const hasNow = day.nodes.some((node) => node.status === 'active')
+            const allDone = day.nodes.every((node) => node.status === 'visited')
             return (
-              <path
-                key={`${fromNode.id}-day-trans`}
-                d={dayTransitionPath(from.x + CARD_W, from.y + CARD_H / 2, to.x, to.y + CARD_H / 2, width)}
-                fill="none"
-                stroke="#3FA772"
-                strokeWidth="3"
-                strokeDasharray="6 3"
-                markerEnd="url(#tf-arrow-green)"
-              />
-            )
-          })}
-
-          {/* Yellow alternative path branch edges */}
-          {branches.map((branch) => {
-            const from = placed.find((item) => item.id === branch.parentId)
-            const to = placed.find((item) => item.id === branch.id)
-            if (!from || !to) return null
-            return (
-              <path
-                key={branch.id}
-                d={`M ${from.x + CARD_W / 2} ${from.y + CARD_H} L ${to.x + CARD_W / 2} ${to.y}`}
-                fill="none"
-                stroke="#E0A63A"
-                strokeWidth="2.5"
-                strokeDasharray="6 4"
-                markerEnd="url(#tf-arrow-yellow)"
-              />
-            )
-          })}
-        </svg>
-
-        {/* Day Banners */}
-        {days.map((day) => {
-          const first = placed.find((item) => item.id === day.nodes[0]?.id)
-          if (!first) return null
-          return (
-            <div
-              key={`d-${day.day}`}
-              id={`canvas-day-${day.day}`}
-              className="absolute flex items-center gap-2.5"
-              style={{ left: PAD, top: first.y - 28 }}
-            >
-              <span className="flex h-6 items-center justify-center rounded-lg bg-[#16212F] px-2.5 text-[11px] font-extrabold uppercase tracking-wider text-[#E0C24C] border border-[#E0C24C]/30 shadow-sm">
-                Day {day.day}
-              </span>
-              <span className="text-[13px] font-bold text-[#F3EFE7]/80">
-                {day.nodes[0]?.city}
-              </span>
-            </div>
-          )
-        })}
-
-        {/* Green Current Path Nodes */}
-        {placed
-          .filter((item) => item.kind === 'main')
-          .map((item) => {
-            const node = main.find((row) => row.id === item.id)
-            if (!node) return null
-            return (
-              <div key={item.id} className="absolute" style={{ left: item.x, top: item.y }}>
-                <GraphCard node={node} selected={selectedId === node.id} onSelect={() => onSelect(node.id)} />
-                <button
-                  type="button"
-                  aria-label="Add hop after this node"
-                  onClick={() => onAdd(node.id)}
-                  className="absolute -right-3.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-[#3FA772] bg-[#16212F] text-[#3FA772] shadow-md transition-all hover:scale-110 hover:bg-[#3FA772] hover:text-white"
-                  title="Add hop here"
+              <div key={day.day} className="flex items-start gap-4">
+                <section
+                  id={`canvas-day-${day.day}`}
+                  className={cn(
+                    'w-[280px] rounded-3xl border p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)]',
+                    hasNow
+                      ? 'border-emerald-400/50 bg-[#122033]'
+                      : allDone
+                        ? 'border-white/5 bg-[#101827]/80'
+                        : 'border-white/10 bg-[#121a2b]',
+                  )}
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )
-          })}
+                  <header className="mb-3 flex items-center justify-between gap-2 px-1">
+                    <div>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
+                        Day {day.day}
+                        {date ? ` · ${date.slice(8, 10)} ${month(date)}` : ''}
+                      </p>
+                      <p className="font-display text-xl text-white">{city}</p>
+                    </div>
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-1 text-[10px] font-bold uppercase',
+                        hasNow ? 'bg-emerald-500 text-white' : allDone ? 'bg-emerald-500/20 text-emerald-200' : 'bg-white/5 text-slate-300',
+                      )}
+                    >
+                      {hasNow ? 'Today' : allDone ? 'Done' : 'Ahead'}
+                    </span>
+                  </header>
 
-        {/* Yellow Alternative Path Nodes */}
-        {placed
-          .filter((item) => item.kind === 'alt')
-          .map((item) => {
-            const branch = branches.find((row) => row.id === item.id)
-            if (!branch) return null
-            return (
-              <div key={item.id} className="absolute" style={{ left: item.x, top: item.y }}>
-                <BranchCard branch={branch} selected={selectedId === branch.id} onSelect={() => onSelectBranch(branch)} />
+                  <div className="relative space-y-3 pl-4">
+                    <span className="absolute bottom-3 left-[11px] top-3 w-px bg-gradient-to-b from-emerald-400 via-emerald-400/40 to-white/10" />
+                    {day.nodes.map((node) => {
+                      const role = roleOf(node, main)
+                      const alts = branches.filter((branch) => branch.parentId === node.id)
+                      return (
+                        <div key={node.id} className="relative">
+                          <span
+                            className={cn(
+                              'absolute -left-4 top-6 z-10 h-2.5 w-2.5 rounded-full border-2 border-[#121a2b]',
+                              role === 'done' && 'bg-emerald-400',
+                              role === 'now' && 'bg-emerald-300 shadow-[0_0_12px_#34d399]',
+                              role === 'next' && 'bg-sky-300',
+                              role === 'later' && 'bg-slate-500',
+                              role === 'hold' && 'bg-rose-400',
+                            )}
+                          />
+                          <StoryCard
+                            node={node}
+                            role={role}
+                            selected={selectedId === node.id}
+                            onSelect={() => onSelect(node.id)}
+                          />
+                          {alts.map((branch) => (
+                            <button
+                              key={branch.id}
+                              type="button"
+                              onClick={() => onSelectBranch(branch)}
+                              className={cn(
+                                'mt-2 w-full rounded-2xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-left',
+                                selectedId === branch.id && 'ring-2 ring-amber-300',
+                              )}
+                            >
+                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-200">Optional swap</p>
+                              <p className="truncate text-sm font-semibold text-white">{branch.title}</p>
+                              <p className="truncate text-[11px] text-slate-300">{branch.subtitle}</p>
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            aria-label="Add hop after this node"
+                            onClick={() => onAdd(node.id)}
+                            className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-white/15 py-1.5 text-[11px] font-semibold text-slate-400 hover:border-emerald-400/50 hover:text-emerald-200"
+                          >
+                            <Plus className="h-3 w-3" />
+                            Add a stop
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+
+                {dayIndex < days.length - 1 ? (
+                  <div className="mt-24 flex w-10 flex-col items-center text-emerald-300">
+                    <span className="h-px w-8 bg-emerald-400/70" />
+                    <span className="my-1 text-[10px] font-bold uppercase tracking-wider">Then</span>
+                    <span className="h-px w-8 bg-emerald-400/70" />
+                  </div>
+                ) : null}
               </div>
             )
           })}
+        </div>
       </div>
     </div>
   )
 }
 
-function GraphCard({
+function Legend() {
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#101827]/90 px-4 py-3 text-[12px] text-slate-300">
+      <p className="mr-2 font-semibold text-white">How to read this journey</p>
+      <LegendDot className="bg-emerald-400" label="Done" />
+      <LegendDot className="bg-emerald-300 shadow-[0_0_10px_#34d399]" label="You are here" />
+      <LegendDot className="bg-sky-300" label="Next" />
+      <LegendDot className="bg-slate-500" label="Later" />
+      <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-amber-100">Gold = optional swap</span>
+      <span className="text-slate-400">Read left to right, morning to night.</span>
+    </div>
+  )
+}
+
+function LegendDot({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={cn('h-2.5 w-2.5 rounded-full', className)} />
+      {label}
+    </span>
+  )
+}
+
+function StoryCard({
   node,
+  role,
   selected,
   onSelect,
 }: {
   node: TripNode
+  role: 'done' | 'now' | 'next' | 'later' | 'hold'
   selected: boolean
   onSelect: () => void
 }) {
   const [imgError, setImgError] = useState(false)
   const typeCfg = TYPE_CONFIG[node.category] ?? TYPE_CONFIG.activity
-  const Icon = node.category === 'transport' && node.title.toLowerCase().includes('indigo') ? Plane : typeCfg.icon
-
-  const visited = node.status === 'visited'
-  const current = node.status === 'active'
-  const disrupted = node.status === 'disrupted'
+  const Icon = node.category === 'transport' && /flight|indigo|6e/i.test(node.title) ? Plane : typeCfg.icon
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        'group flex w-[240px] gap-2.5 rounded-xl border bg-[#16212F] p-2.5 text-left shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition-all hover:border-[#3FA772]',
-        selected && 'ring-2 ring-[#3FA772] border-[#3FA772]',
-        visited && 'border-[#3FA772]/60 bg-[#16212F]',
-        current && 'border-[#3FA772] ring-2 ring-[#3FA772]/30 shadow-[0_0_20px_rgba(63,167,114,0.3)]',
-        disrupted && 'border-[#C96A4B] bg-[#C96A4B]/10',
-        !visited && !current && !disrupted && 'border-slate-800',
+        'w-full overflow-hidden rounded-2xl border bg-[#162033] text-left shadow-lg transition',
+        selected && 'ring-2 ring-emerald-300',
+        role === 'now' && 'border-emerald-400 shadow-[0_0_24px_rgba(52,211,153,0.25)]',
+        role === 'done' && 'border-emerald-500/30 opacity-80',
+        role === 'next' && 'border-sky-400/40',
+        role === 'later' && 'border-white/10',
+        role === 'hold' && 'border-rose-400/50',
       )}
     >
-      <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#101823]">
-        <img
-          src={imgError ? FALLBACK_IMG : nodeImage(node)}
-          onError={() => setImgError(true)}
-          alt=""
-          className="h-full w-full object-cover"
-        />
-        {/* Status Ring / Badge Overlay */}
-        {visited ? (
-          <span className="absolute inset-0 flex items-center justify-center bg-[#3FA772]/85 text-white">
-            <Check className="h-5 w-5" />
+      <span className="flex gap-2.5 p-2.5">
+        <span className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-[#0b1220]">
+          <img
+            src={imgError ? FALLBACK_IMG : nodeImage(node)}
+            onError={() => setImgError(true)}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+          {role === 'done' ? (
+            <span className="absolute inset-0 flex items-center justify-center bg-emerald-500/80 text-white">
+              <Check className="h-5 w-5" />
+            </span>
+          ) : null}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center justify-between gap-2">
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider"
+              style={{ color: typeCfg.color, backgroundColor: typeCfg.bg }}
+            >
+              <Icon className="h-3 w-3" />
+              {typeCfg.label}
+            </span>
+            <span
+              className={cn(
+                'rounded-full px-2 py-0.5 text-[9px] font-bold uppercase',
+                role === 'done' && 'bg-emerald-500/20 text-emerald-200',
+                role === 'now' && 'bg-emerald-500 text-white',
+                role === 'next' && 'bg-sky-500/20 text-sky-200',
+                role === 'later' && 'bg-white/5 text-slate-400',
+                role === 'hold' && 'bg-rose-500/20 text-rose-200',
+              )}
+            >
+              {role === 'done' ? 'Done' : role === 'now' ? 'Now' : role === 'next' ? 'Next' : role === 'hold' ? 'Hold' : 'Later'}
+            </span>
           </span>
-        ) : null}
-      </span>
-
-      <span className="min-w-0 flex-1">
-        {/* Type Header Badge */}
-        <span
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider"
-          style={{ color: typeCfg.color, backgroundColor: typeCfg.bg }}
-        >
-          <Icon className="h-3 w-3" />
-          {typeCfg.label}
-        </span>
-
-        {/* Node Name */}
-        <span className="mt-1 block truncate text-[13px] font-bold text-[#F3EFE7] group-hover:text-white">
-          {node.title}
-        </span>
-
-        {/* Location / Duration */}
-        <span className="block truncate text-[11px] font-medium text-slate-400">
-          {node.city} · {nodeDuration(node)}
-        </span>
-
-        {/* Price & Status */}
-        <span className="mt-1.5 flex items-center justify-between">
-          <span className="text-[12px] font-extrabold text-[#3FA772]">
-            {node.cost ? formatINR(node.cost) : 'Included'}
+          <span className="mt-1 block truncate text-[14px] font-bold text-white">{node.title}</span>
+          <span className="block truncate text-[11px] text-slate-400">
+            {node.time} · {node.city}
           </span>
-          {visited ? (
-            <span className="rounded-full bg-[#3FA772]/20 px-2 py-0.5 text-[9px] font-bold uppercase text-[#3FA772]">
-              Visited
+          <span className="mt-1 flex items-center justify-between gap-2">
+            <span className="truncate text-[11px] text-slate-400">{node.notes || nodeDuration(node)}</span>
+            <span className="shrink-0 text-[12px] font-extrabold text-emerald-300">
+              {node.cost ? formatINR(node.cost) : 'Included'}
             </span>
-          ) : current ? (
-            <span className="rounded-full bg-[#3FA772] px-2 py-0.5 text-[9px] font-bold uppercase text-white shadow-xs">
-              Current
-            </span>
-          ) : (
-            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-400">
-              Upcoming
-            </span>
-          )}
+          </span>
         </span>
       </span>
     </button>
   )
-}
-
-function BranchCard({
-  branch,
-  selected,
-  onSelect,
-}: {
-  branch: VisualBranch
-  selected: boolean
-  onSelect: () => void
-}) {
-  const [imgError, setImgError] = useState(false)
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        'group flex w-[240px] gap-2.5 rounded-xl border border-[#E0A63A]/50 bg-[#16212F] p-2.5 text-left shadow-sm transition-all hover:border-[#E0A63A] hover:bg-[#1a2839]',
-        selected && 'ring-2 ring-[#E0A63A] border-[#E0A63A]',
-      )}
-    >
-      <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#101823]">
-        <img
-          src={imgError ? FALLBACK_IMG : branch.image}
-          onError={() => setImgError(true)}
-          alt=""
-          className="h-full w-full object-cover opacity-90 group-hover:opacity-100"
-        />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="inline-flex rounded-md bg-[#E0A63A]/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#E0A63A]">
-          Yellow path
-        </span>
-        <span className="mt-1 block truncate text-[13px] font-bold text-[#F3EFE7]">{branch.title}</span>
-        <span className="block truncate text-[11px] text-slate-400">{branch.subtitle}</span>
-        <span
-          className={cn(
-            'mt-1 block text-[12px] font-extrabold',
-            branch.extraCost > 0 ? 'text-[#C96A4B]' : 'text-[#3FA772]',
-          )}
-        >
-          {branch.extraCost === 0
-            ? 'Same cost'
-            : `${branch.extraCost > 0 ? '+' : '−'}${formatINR(Math.abs(branch.extraCost))}`}
-        </span>
-      </span>
-    </button>
-  )
-}
-
-function EdgePlus({ horizontal, green, onAdd }: { horizontal: boolean; green: boolean; onAdd: () => void }) {
-  return (
-    <div className={cn('flex items-center justify-center', horizontal ? 'w-12' : 'h-8 flex-col')}>
-      <span className={cn(horizontal ? 'h-0.5 w-3' : 'h-2 w-0.5', green ? 'bg-[#3FA772]' : 'bg-[#E0A63A]')} />
-      <button
-        type="button"
-        aria-label="Add a node"
-        onClick={onAdd}
-        className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-700 bg-[#16212F] text-slate-400 transition-transform hover:scale-110 hover:text-white"
-      >
-        <Plus className="h-3 w-3" />
-      </button>
-      <span className={cn(horizontal ? 'h-0.5 w-3' : 'h-2 w-0.5', green ? 'bg-[#3FA772]' : 'bg-[#E0A63A]')} />
-    </div>
-  )
-}
-
-function layout(days: { day: number; nodes: TripNode[] }[], branches: VisualBranch[]) {
-  const placed: { id: string; x: number; y: number; kind: 'main' | 'alt' }[] = []
-  let y = 52
-  days.forEach((day) => {
-    const hasAlt = day.nodes.some((node) => branches.some((branch) => branch.parentId === node.id))
-    day.nodes.forEach((node, index) => {
-      const x = PAD + index * (CARD_W + COL)
-      placed.push({ id: node.id, x, y, kind: 'main' })
-      branches
-        .filter((branch) => branch.parentId === node.id)
-        .forEach((branch, altIndex) => {
-          placed.push({
-            id: branch.id,
-            x: x + altIndex * (CARD_W + 16),
-            y: y + CARD_H + 28,
-            kind: 'alt',
-          })
-        })
-    })
-    y += ROW + (hasAlt ? ALT : 0)
-  })
-  return placed
 }
 
 function groupDays(nodes: TripNode[]) {
@@ -416,19 +320,9 @@ function groupDays(nodes: TripNode[]) {
     current.nodes.push(node)
     map.set(node.day, current)
   })
-  return [...map.values()]
+  return [...map.values()].sort((a, b) => a.day - b.day)
 }
 
-function elbow(x1: number, y1: number, x2: number, y2: number) {
-  const midX = (x1 + x2) / 2
-  return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`
-}
-
-function dayTransitionPath(x1: number, y1: number, x2: number, y2: number, totalWidth: number) {
-  if (x2 < x1) {
-    const rightMargin = Math.min(totalWidth - 30, x1 + 70)
-    const midY = (y1 + y2) / 2
-    return `M ${x1} ${y1} C ${rightMargin} ${y1}, ${rightMargin} ${midY}, ${rightMargin} ${y2} C ${rightMargin} ${y2}, ${x2 - 30} ${y2}, ${x2} ${y2}`
-  }
-  return elbow(x1, y1, x2, y2)
+function month(date: string) {
+  return new Date(`${date}T00:00:00`).toLocaleString('en-IN', { month: 'short' })
 }

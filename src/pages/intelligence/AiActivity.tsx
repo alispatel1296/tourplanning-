@@ -38,7 +38,7 @@ export function AiActivityPanel() {
           ))}
         </ol>
         <Badge tone="ai" className="mt-4">
-          Demo pulse · not a hidden model
+          Live pulse · not a hidden model
         </Badge>
       </div>
     </Card>

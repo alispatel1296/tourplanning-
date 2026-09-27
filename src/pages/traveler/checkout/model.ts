@@ -139,7 +139,7 @@ function allocate(nodes: TripNode[], total: number, path: PathMode, detail: (nod
 export function itineraryText(trip: Trip, bookingId: string, sections: QuoteSection[]) {
   const dynamicTotal = computeQuote(trip).total
   const lines = [
-    'TripFlow AI · Booking confirmation (demo)',
+    'TripFlow AI · Booking confirmation',
     `Booking ID: ${bookingId}`,
     `Trip: ${trip.route}`,
     `Dates: ${checkoutDates(trip.startDate, trip.endDate)}`,

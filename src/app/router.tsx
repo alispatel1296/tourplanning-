@@ -22,6 +22,10 @@ const Itinerary = lazy(() => import('@/pages/traveler/Itinerary').then((m) => ({
 const Checkout = lazy(() => import('@/pages/traveler/Checkout').then((m) => ({ default: m.Checkout })))
 const TripDetail = lazy(() => import('@/pages/traveler/TripDetail').then((m) => ({ default: m.TripDetail })))
 const LiveTrip = lazy(() => import('@/pages/traveler/LiveTrip').then((m) => ({ default: m.LiveTrip })))
+const TravelerMap = lazy(() => import('@/pages/traveler/TravelerMap').then((m) => ({ default: m.TravelerMap })))
+const TravelerExplore = lazy(() => import('@/pages/traveler/TravelerExplore').then((m) => ({ default: m.TravelerExplore })))
+const TwinStudio = lazy(() => import('@/pages/traveler/twin/TwinStudio').then((m) => ({ default: m.TwinStudio })))
+const PredictiveStudio = lazy(() => import('@/pages/traveler/predict/PredictiveStudio').then((m) => ({ default: m.PredictiveStudio })))
 const Review = lazy(() => import('@/pages/traveler/Review').then((m) => ({ default: m.Review })))
 const TravelerNotifications = lazy(() =>
   import('@/pages/traveler/Notifications').then((m) => ({ default: m.TravelerNotifications })),
@@ -76,6 +80,7 @@ const OperatorIntegrations = lazy(() =>
 const SerpApiMonitor = lazy(() =>
   import('@/pages/operator/settings/SerpApiMonitor').then((m) => ({ default: m.SerpApiMonitor })),
 )
+const OperatorTwin = lazy(() => import('@/pages/operator/twin/OperatorTwin').then((m) => ({ default: m.OperatorTwin })))
 
 // Field roles (lazy-loaded)
 const CoordinatorHome = lazy(() => import('@/pages/FieldRoles').then((m) => ({ default: m.CoordinatorHome })))
@@ -124,6 +129,8 @@ export const router = createBrowserRouter([
         element: <TravelerShell />,
         children: [
           { index: true, element: <TravelerDashboard /> },
+          { path: 'explore', element: <TravelerExplore /> },
+          { path: 'map', element: <TravelerMap /> },
           { path: 'plan', element: <PlanTrip /> },
           { path: 'plan/build', element: <PlanBuilder /> },
           { path: 'itinerary', element: <Itinerary /> },
@@ -133,6 +140,8 @@ export const router = createBrowserRouter([
           { path: 'trips', element: <Trips /> },
           { path: 'trips/:id', element: <TripDetail /> },
           { path: 'live/:id', element: <LiveTrip /> },
+          { path: 'twin/:id', element: <TwinStudio /> },
+          { path: 'predict/:id', element: <PredictiveStudio /> },
           { path: 'review/:id', element: <Review /> },
           { path: 'profile', element: <TravelerProfile /> },
           { path: 'notifications', element: <TravelerNotifications /> },
@@ -162,6 +171,7 @@ export const router = createBrowserRouter([
           { path: 'groups', element: <OperatorGroups /> },
           { path: 'groups/:id', element: <GroupSync /> },
           { path: 'conflicts', element: <OperatorConflicts /> },
+          { path: 'twin', element: <OperatorTwin /> },
           { path: 'analytics', element: <OperatorAnalytics /> },
           { path: 'notifications', element: <OperatorNotifications /> },
           { path: 'settings', element: <OperatorSettings /> },

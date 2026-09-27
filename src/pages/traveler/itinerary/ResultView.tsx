@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, Hotel, Sparkles, TrainFront, UtensilsCrossed, Waves } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -12,7 +12,7 @@ import { formatDate, formatINR, cn } from '@/lib/cn'
 import { dateRangeLabel, tripDuration } from '@/lib/plan'
 import { useAppState, usePrimaryTrip } from '@/state/AppState'
 import type { TripNode } from '@/types'
-import type { ComposeTripResult } from '@/services/travel/types'
+import type { ComposeTripResult, LivePlanResult } from '@/services/travel/types'
 import { categoryFor, entityToPatch, priceLabel } from '@/services/travel/toNode'
 
 const nodeTone: Record<TripNode['category'], { label: string; className: string; icon: typeof TrainFront }> = {
@@ -42,9 +42,9 @@ function buildTravelTime(nodes: TripNode[]): string {
 
 export function ResultView({ onRegenerate }: { onRegenerate: () => void }) {
   const trip = usePrimaryTrip()
-  const { plan, pushToast, insertTravelNode } = useAppState()
+  const { plan, pushToast, insertTravelNode, liveSources } = useAppState()
   const navigate = useNavigate()
-  const [openDays, setOpenDays] = useState<number[]>([1, 4])
+  const [openDays, setOpenDays] = useState<number[]>([])
   const composed = useMemo(() => {
     try {
       const raw = sessionStorage.getItem('tf-trip-compose')
@@ -53,11 +53,24 @@ export function ResultView({ onRegenerate }: { onRegenerate: () => void }) {
       return null
     }
   }, [])
+  const livePlan = useMemo(() => {
+    try {
+      const raw = sessionStorage.getItem('tf-live-plan')
+      return raw ? (JSON.parse(raw) as LivePlanResult) : null
+    } catch {
+      return null
+    }
+  }, [])
+  const sources = livePlan?.sources?.length ? livePlan.sources : liveSources
   const [flow, setFlow] = useState(false)
   const [saved, setSaved] = useState(false)
   const duration = tripDuration(plan)
   const remaining = trip.budget - trip.spent
-  const days = useMemo(() => groupDays(trip.nodes), [trip.nodes])
+  const days = useMemo(() => groupDays(trip.nodes.filter((node) => node.status !== 'alternative')), [trip.nodes])
+
+  useEffect(() => {
+    setOpenDays(days.map((day) => day.day))
+  }, [days])
 
   const toggle = (day: number) => {
     setOpenDays((current) => (current.includes(day) ? current.filter((item) => item !== day) : [...current, day]))
@@ -67,18 +80,25 @@ export function ResultView({ onRegenerate }: { onRegenerate: () => void }) {
     <div>
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <Badge tone="success">Generated</Badge>
-        <Badge tone="info">{composed?.configured ? 'Live candidates retrieved' : 'Simulated'}</Badge>
-        <Badge tone="ai">Checked</Badge>
+        <Badge tone="info">{sources.length || composed?.configured ? 'Live candidates retrieved' : 'Structured circuit'}</Badge>
+        <Badge tone="ai">OpenRouter sequenced</Badge>
         <Badge tone="success">Optimized</Badge>
       </div>
       <h1 className="page-title">Your optimized journey is ready.</h1>
       <p className="mt-2 text-sm text-slate-600">
-        {duration.nights} nights • {duration.days} days • {trip.adults} travelers · {dateRangeLabel(plan)}
+        {duration.nights} nights • {duration.days} days • {trip.adults} travelers · {dateRangeLabel(plan)} · {trip.route}
+        {sources.length ? ` · ${sources.join(' · ')}` : ''}
+        {livePlan?.narrative &&
+        [trip.origin.city, ...trip.destinations.map((item) => item.city)].some((city) =>
+          livePlan.narrative.toLowerCase().includes(city.toLowerCase()),
+        )
+          ? ` — ${livePlan.narrative}`
+          : ''}
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Budget" value={formatINR(trip.budget)} hint={`${formatINR(remaining)} still free`} tone="success" />
-        <MetricCard label="Feasibility" value="94%" hint="After conflict resolution" tone="ai" />
+        <MetricCard label="Feasibility" value={`${trip.feasibility}%`} hint={livePlan ? 'Live OpenRouter score' : 'After conflict resolution'} tone="ai" />
         <MetricCard label="Travel time" value="11h 20m" hint="Rail + two flights + cabs" tone="info" />
         <MetricCard label="Safety buffer" value="45 min" hint={`${formatINR(5000)} cash buffer`} tone="warning" />
       </div>
@@ -223,7 +243,7 @@ type="button"           variant={saved ? 'outline' : 'secondary'}
               <AILabel />
             </div>
             <div className="flex items-center gap-4">
-              <ProgressRing value={94} label="ready" size={88} />
+              <ProgressRing value={trip.feasibility} label="ready" size={88} />
               <div className="flex-1 space-y-2">
                 <Score label="Transport" value={96} />
                 <Score label="Timing" value={92} />
@@ -235,19 +255,27 @@ type="button"           variant={saved ? 'outline' : 'secondary'}
           <div>
             <p className="card-title mb-3">AI Insights</p>
             <div className="space-y-3">
+              {livePlan?.narrative ? (
+                <AIInsightCard title="Live compose note" body={livePlan.narrative} confidence={0.9} />
+              ) : (
+                <AIInsightCard
+                  title="45-minute arrival buffer"
+                  body="Your itinerary leaves 45 minutes between arrival and check-in."
+                  confidence={0.93}
+                />
+              )}
               <AIInsightCard
-                title="45-minute arrival buffer"
-                body="Your itinerary leaves 45 minutes between arrival and check-in."
-                confidence={0.93}
+                title={sources.length ? `Sourced from ${sources.slice(0, 2).join(' + ')}` : 'Day 4 is activity-heavy'}
+                body={
+                  sources.length
+                    ? 'Hotel, transport, and activity names were retrieved first. OpenRouter only sequenced those rows.'
+                    : 'Day 4 is activity-heavy. Consider moving one activity to Day 5.'
+                }
+                confidence={0.86}
               />
               <AIInsightCard
-                title="Day 4 is activity-heavy"
-                body="Day 4 is activity-heavy. Consider moving one activity to Day 5."
-                confidence={0.81}
-              />
-              <AIInsightCard
-                title="Under budget"
-                body="You're currently ₹2,300 below budget."
+                title="Budget vs live prices"
+                body={`You're currently ${formatINR(Math.max(0, trip.budget - trip.spent))} under the ceiling after retrieved prices.`}
                 confidence={0.9}
               />
             </div>

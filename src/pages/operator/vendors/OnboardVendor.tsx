@@ -129,7 +129,7 @@ export function OnboardVendor({
           label="Documents"
           value={form.documents}
           onChange={(documents) => set({ documents })}
-          hint="Comma-separated. Demo only — nothing is uploaded."
+          hint="Comma-separated. Workspace only — nothing is uploaded."
         />
       ) : null}
       <div className="mt-5 flex justify-between">

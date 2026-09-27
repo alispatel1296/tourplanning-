@@ -169,7 +169,7 @@ export function CustomerProfile() {
       </div>
 
       <Modal open={message} onClose={() => setMessage(false)} title={`Message ${person.name}`}>
-        <p className="text-sm text-slate-600">Desk note only — nothing is emailed in this demo.</p>
+        <p className="text-sm text-slate-600">Desk note only — nothing is emailed from this workspace.</p>
         <textarea
           value={note}
           onChange={(event) => setNote(event.target.value)}

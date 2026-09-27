@@ -1,7 +1,15 @@
-import type { ComposeTripResult, SerpHealth, TravelEntity, TravelSearchResult } from '@/services/travel/types'
+import { apiUrl } from '@/lib/api'
+import type {
+  ComposeTripResult,
+  LiveConflictsResult,
+  LivePlanResult,
+  SerpHealth,
+  TravelEntity,
+  TravelSearchResult,
+} from '@/services/travel/types'
 
 async function post<T>(path: string, body: Record<string, unknown> = {}): Promise<T> {
-  const response = await fetch(`/api/travel/${path}`, {
+  const response = await fetch(apiUrl(`/api/travel/${path}`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -101,6 +109,11 @@ export async function searchNews(q: string): Promise<TravelSearchResult> {
   return post('news', { q })
 }
 
+export async function searchSocialSignals(cities: string[]): Promise<TravelSearchResult> {
+  remember(`Social · ${cities.join(', ')}`)
+  return post('social-signals', { cities })
+}
+
 export async function searchTrains(origin: string, destination: string): Promise<TravelSearchResult> {
   return post('trains', { origin, destination })
 }
@@ -118,8 +131,23 @@ export async function composeTrip(input: Record<string, unknown>): Promise<Compo
   return post('compose', input)
 }
 
+export async function planLive(input: Record<string, unknown>): Promise<LivePlanResult> {
+  remember('Live itinerary')
+  return post('plan-live', input)
+}
+
+export async function fetchLiveConflicts(input: {
+  tripId: string
+  tripTitle: string
+  cities: string[]
+  origin?: string
+}): Promise<LiveConflictsResult> {
+  remember(`Conflicts · ${input.cities.join(', ')}`)
+  return post('conflicts-live', input)
+}
+
 export async function getSerpHealth(): Promise<SerpHealth> {
-  const response = await fetch('/api/travel/health')
+  const response = await fetch(apiUrl('/api/travel/health'))
   if (!response.ok) {
     return {
       configured: false,
@@ -132,7 +160,7 @@ export async function getSerpHealth(): Promise<SerpHealth> {
 }
 
 export async function getSerpStats(): Promise<SerpHealth['stats']> {
-  const response = await fetch('/api/travel/stats')
+  const response = await fetch(apiUrl('/api/travel/stats'))
   if (!response.ok) return { requestsToday: 0, cachedSearches: 0, errors: 0, averageLatencyMs: 0 }
   return (await response.json()) as SerpHealth['stats']
 }

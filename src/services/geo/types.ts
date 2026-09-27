@@ -40,9 +40,27 @@ export interface WeatherNow {
   condition: string
   weatherCode: number
   precipitationProbability: number
+  precipitationMm: number
   windKmh: number
   humidity: number
   source: 'live' | 'demo'
+}
+
+export interface WeatherHour {
+  time: string
+  temperatureC: number
+  precipitationMm: number
+  precipitationProbability: number
+  weatherCode: number
+  windKmh: number
+  condition: string
+}
+
+export interface WeatherBundle {
+  now: WeatherNow
+  hourly: WeatherHour[]
+  lat: number
+  lng: number
 }
 
 export interface WeatherDay {

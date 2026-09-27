@@ -249,7 +249,7 @@ export function PlanTrip() {
         .plan-trip-root {
           position: relative;
           min-height: 85vh;
-          padding-bottom: 100px;
+          padding-bottom: 200px;
         }
 
         /* Header */
@@ -265,7 +265,7 @@ export function PlanTrip() {
           font-weight: 700;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: var(--brand-600, #7c3aed);
+          color: var(--color-muted-gold);
           margin-bottom: 4px;
         }
         .plan-trip-title {
@@ -287,9 +287,9 @@ export function PlanTrip() {
           gap: 4px;
           font-size: 12px;
           font-weight: 600;
-          color: #059669;
+          color: var(--color-ocean);
           background: #ecfdf5;
-          border: 1px solid #a7f3d0;
+          border: 1px solid var(--color-ocean);
           border-radius: 999px;
           padding: 4px 10px;
           white-space: nowrap;
@@ -324,21 +324,21 @@ export function PlanTrip() {
           opacity: 0.45;
         }
         .plan-step-btn--active {
-          background: #f5f3ff;
-          border-color: #c4b5fd;
+          background: var(--color-warm-ivory);
+          border-color: var(--color-muted-gold);
         }
         .plan-step-btn--done {
           background: #f0fdf4;
-          border-color: #bbf7d0;
+          border-color: var(--color-ocean);
         }
         .plan-step-btn--done:hover {
           background: #dcfce7;
         }
         .plan-step-btn--active:hover {
-          background: #ede9fe;
+          background: var(--color-warm-ivory);
         }
         .plan-step-btn:not(:disabled):not(.plan-step-btn--active):not(.plan-step-btn--done):hover {
-          background: #f8fafc;
+          background: var(--color-surface);
           border-color: #e2e8f0;
         }
 
@@ -357,12 +357,12 @@ export function PlanTrip() {
           transition: all 0.2s;
         }
         .plan-step-number--active {
-          background: linear-gradient(135deg, #7c3aed, #4f46e5);
-          color: white;
-          box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+          background: var(--color-charcoal);
+          color: var(--color-muted-gold);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
         .plan-step-number--done {
-          background: linear-gradient(135deg, #059669, #10b981);
+          background: var(--color-ocean);
           color: white;
         }
 
@@ -382,8 +382,8 @@ export function PlanTrip() {
           color: #94a3b8;
           font-weight: 500;
         }
-        .plan-step-btn--active .plan-step-label { color: #5b21b6; }
-        .plan-step-btn--done .plan-step-label { color: #065f46; }
+        .plan-step-btn--active .plan-step-label { color: var(--color-charcoal); }
+        .plan-step-btn--done .plan-step-label { color: var(--color-ocean); }
 
         /* Progress bar */
         .plan-progress-track {
@@ -396,7 +396,7 @@ export function PlanTrip() {
         }
         .plan-progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #7c3aed, #4f46e5);
+          background: var(--color-muted-gold);
           border-radius: 999px;
         }
 
@@ -463,29 +463,29 @@ export function PlanTrip() {
           gap: 8px;
           font-size: 14px;
           font-weight: 700;
-          color: white;
-          background: linear-gradient(135deg, #7c3aed, #4f46e5);
+          color: var(--color-charcoal);
+          background: var(--color-muted-gold);
           border: none;
           border-radius: 12px;
           padding: 10px 22px;
           cursor: pointer;
           transition: all 0.18s;
-          box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+          box-shadow: 0 4px 12px rgba(0,0,0, 0.1);
         }
         .plan-footer-next:hover {
-          box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+          box-shadow: 0 6px 20px rgba(0,0,0, 0.15);
           transform: translateY(-1px);
         }
         .plan-footer-next:active {
           transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+          box-shadow: 0 2px 8px rgba(0,0,0, 0.05);
         }
 
         /* Voice FAB */
         .plan-voice-fab {
           position: fixed;
           right: 24px;
-          bottom: 88px;
+          bottom: 96px;
           z-index: 50;
           display: flex;
           flex-direction: column;
@@ -495,16 +495,16 @@ export function PlanTrip() {
           width: 58px;
           height: 58px;
           border-radius: 18px;
-          background: linear-gradient(135deg, #7c3aed, #4f46e5);
-          color: white;
+          background: var(--color-charcoal);
+          color: var(--color-muted-gold);
           border: none;
           cursor: pointer;
-          box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+          box-shadow: 0 6px 20px rgba(0,0,0, 0.2);
           transition: all 0.2s;
         }
         .plan-voice-fab:hover {
           transform: translateY(-2px) scale(1.05);
-          box-shadow: 0 10px 28px rgba(124, 58, 237, 0.55);
+          box-shadow: 0 10px 28px rgba(0,0,0, 0.3);
         }
         .plan-voice-fab:active {
           transform: scale(0.97);
@@ -521,7 +521,7 @@ export function PlanTrip() {
             left: 240px; /* offset sidebar */
           }
           .plan-voice-fab {
-            bottom: 32px;
+            bottom: 96px; /* Place above the sticky footer */
           }
         }
       `}</style>

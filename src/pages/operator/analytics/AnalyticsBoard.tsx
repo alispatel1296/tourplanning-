@@ -53,7 +53,7 @@ export function OperatorAnalytics() {
     <div>
       <PageHeader
         title="Analytics"
-        description="Decision view for the west-coast season. Compact, filterable, and marked as demo."
+        description="Decision view for the west-coast season. Compact and filterable."
         crumbs={[{ label: 'Command', to: '/operator' }, { label: 'Analytics' }]}
         actions={
           <>
@@ -72,7 +72,7 @@ export function OperatorAnalytics() {
               icon={<FileText className="h-4 w-4" />}
               onClick={() => {
                 downloadText('tripflow-analytics-brief.txt', analyticsReport(snap, filters), 'text/plain;charset=utf-8')
-                pushToast({ title: 'Report exported', body: 'Demo analytics brief downloaded.' })
+                pushToast({ title: 'Report exported', body: 'Analytics brief downloaded.' })
               }}
             >
               Export Report
@@ -82,7 +82,7 @@ export function OperatorAnalytics() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Badge tone="ai">Demo analytics</Badge>
+        <Badge tone="ai">Desk analytics</Badge>
         <p className="text-[13px] text-slate-500">Simulated from the Horizon Trails desk. Filters reshape the view; nothing is live-metered.</p>
       </div>
 
@@ -172,7 +172,7 @@ export function OperatorAnalytics() {
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1">
             <AILabel />
-            <span className="text-[12px] font-medium text-slate-500">Demo analytics · not a live model</span>
+            <span className="text-[12px] font-medium text-slate-500">Desk analytics · seasonal model</span>
           </div>
           {snap.insights.map((item) => (
             <AIInsightCard key={item.title} title={item.title} body={item.body} />

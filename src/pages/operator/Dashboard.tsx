@@ -87,9 +87,14 @@ export function OperatorDashboard() {
         title="Good morning, Priya"
         description="Here's what's happening across your tours."
         actions={
-          <Button type="button" variant="secondary" onClick={() => navigate('/operator/conflicts')}>
-            Review Conflicts
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => navigate('/operator/twin')}>
+              Weather Twin
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => navigate('/operator/conflicts')}>
+              Review Conflicts
+            </Button>
+          </div>
         }
       />
 
@@ -117,7 +122,7 @@ export function OperatorDashboard() {
             </div>
             <div className="overflow-x-auto app-scrollbar">
               <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                <thead className="bg-[var(--color-warm-ivory)]/50 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--color-charcoal)]/50">
                   <tr>
                     {['Tour', 'Traveler', 'Destination', 'Dates', 'Status', 'Budget', 'Coordinator', 'Alert'].map((col) => (
                       <th key={col} className="px-3 py-2.5 font-semibold">
@@ -178,8 +183,8 @@ export function OperatorDashboard() {
                     {item.tone === 'success' ? '✓' : '⚠'}
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold">{item.title}</span>
-                    <span className="meta">{item.body}</span>
+                  <span className="block text-sm font-semibold text-[var(--color-charcoal)]">{item.title}</span>
+                  <span className="meta">{item.body}</span>
                   </span>
                 </button>
               ))}
@@ -338,12 +343,12 @@ function Kpi({
   tone: 'default' | 'success' | 'warning' | 'danger' | 'ai' | 'info'
 }) {
   const tones = {
-    default: 'bg-slate-50 text-slate-600',
-    success: 'bg-emerald-50 text-emerald-700',
-    warning: 'bg-amber-50 text-amber-700',
-    danger: 'bg-rose-50 text-rose-600',
-    ai: 'bg-brand-50 text-brand-700',
-    info: 'bg-electric-50 text-electric-700',
+    default: 'bg-[var(--color-warm-ivory)] text-[var(--color-charcoal)]',
+    success: 'bg-[var(--color-ocean)]/10 text-[var(--color-ocean)]',
+    warning: 'bg-[var(--color-muted-gold)]/20 text-[var(--color-charcoal)]',
+    danger: 'bg-red-50 text-red-600',
+    ai: 'bg-[var(--color-charcoal)] text-[var(--color-muted-gold)]',
+    info: 'bg-[var(--color-sky)]/50 text-[var(--color-ocean)]',
   }
   return (
     <Card>
@@ -353,8 +358,8 @@ function Kpi({
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-2 font-display text-[28px] font-semibold tracking-tight">{value}</p>
-      <p className="mt-1 text-[12px] text-slate-500">{trend}</p>
+      <p className="mt-2 font-display text-4xl font-semibold tracking-tight text-[var(--color-charcoal)]">{value}</p>
+      <p className="mt-1 text-[13px] font-medium text-[var(--color-charcoal)]/50">{trend}</p>
     </Card>
   )
 }

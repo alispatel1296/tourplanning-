@@ -27,7 +27,7 @@ const sectionIcons = {
   local: CarFront,
 }
 
-const paySteps = ['Authorizing demo payment', 'Confirming vendor holds', 'Issuing TripFlow tickets']
+const paySteps = ['Authorizing payment hold', 'Confirming vendor holds', 'Issuing TripFlow tickets']
 
 export function Checkout() {
   const trip = usePrimaryTrip()
@@ -58,7 +58,7 @@ export function Checkout() {
     link.download = `TripFlow-${record?.bookingId ?? DEMO_BOOKING_ID}.txt`
     link.click()
     URL.revokeObjectURL(url)
-    pushToast({ title: 'Itinerary downloaded', body: 'A demo text itinerary was saved to your device.' })
+    pushToast({ title: 'Itinerary downloaded', body: 'A text itinerary was saved to your device.' })
   }
 
   const share = async () => {
@@ -124,7 +124,7 @@ export function Checkout() {
                   <p className="meta">Trip</p>
                   <p className="mt-1 font-display text-lg font-semibold">{trip.route}</p>
                 </div>
-                <Badge tone="info">Demo quote</Badge>
+                <Badge tone="info">Live quote</Badge>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <Meta label="Dates" value={checkoutDates(trip.startDate, trip.endDate)} />
@@ -259,7 +259,7 @@ function ProcessingCard({ step }: { step: number }) {
         />
       </div>
       <p className="mt-4 font-display text-xl font-semibold">Confirming your trip…</p>
-      <p className="mt-1 text-sm text-slate-500">Demo authorization only. No bank or UPI app is contacted.</p>
+      <p className="mt-1 text-sm text-slate-500">Authorization hold only. No bank or UPI app is contacted.</p>
       <ul className="mt-5 space-y-2 text-left text-sm">
         {paySteps.map((label, index) => (
           <li

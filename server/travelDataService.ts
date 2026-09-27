@@ -21,23 +21,10 @@ import type {
   TravelSearchResult,
 } from './types'
 
-const IATA: Record<string, string> = {
-  ahmedabad: 'AMD',
-  mumbai: 'BOM',
-  bombay: 'BOM',
-  goa: 'GOI',
-  panaji: 'GOI',
-  jaipur: 'JAI',
-  udaipur: 'UDR',
-  kerala: 'COK',
-  kochi: 'COK',
-  delhi: 'DEL',
-  bangalore: 'BLR',
-  bengaluru: 'BLR',
-}
+import { gatewayFor, iataFor } from './cityCodes'
 
 function iata(city: string): string | undefined {
-  return IATA[city.trim().toLowerCase()]
+  return iataFor(city) ?? gatewayFor(city)?.iata
 }
 
 function emptyMeta(engine: string, query: string, extra?: Partial<TravelSearchMeta>): TravelSearchMeta {
@@ -210,12 +197,14 @@ export async function searchAttractions(near: string) {
 
 export async function searchFlights(input: { origin: string; destination: string; date: string; returnDate?: string; adults?: number }) {
   const from = iata(input.origin)
-  const to = iata(input.destination)
+  const local = iataFor(input.destination)
+  const gateway = gatewayFor(input.destination)
+  const to = gateway?.iata ?? local
   if (!from || !to) {
     return {
       items: [] as TravelEntity[],
       meta: emptyMeta('google_flights', `${input.origin} ${input.destination}`, { error: 'Airport code unavailable for this city' }),
-      message: 'Flight search needs known airport codes. Information unavailable for this pair.',
+      message: 'Flight search needs a known airport or gateway for this city.',
     }
   }
   const result = await run(
@@ -231,7 +220,15 @@ export async function searchFlights(input: { origin: string; destination: string
     },
     normalizeFlights,
   )
-  return result
+  if (!gateway) return result
+  return {
+    ...result,
+    items: result.items.map((item) => ({
+      ...item,
+      description: `${item.description ?? ''} Gateway ${gateway.name} (${gateway.iata}) for ${input.destination}.`.trim(),
+    })),
+    message: `Flights are retrieved via ${gateway.name} (${gateway.iata}), the usual air gateway for ${input.destination}.`,
+  }
 }
 
 export async function searchTravelInformation(q: string) {
@@ -265,6 +262,52 @@ export async function searchMaps(q: string) {
 
 export async function searchNews(q: string) {
   return run('google_news', { q, gl: 'in' }, normalizeNews)
+}
+
+export async function searchSocialSignals(cities: string[]) {
+  const unique = [...new Set(cities.map((city) => city.trim()).filter(Boolean))].slice(0, 3)
+  if (!unique.length) unique.push('Goa')
+  const queries = unique.map((city) => `${city} weather rain flood tourists travel`)
+  const news = await Promise.all(queries.map((q) => searchNews(q)))
+  const reports = await run(
+    'google',
+    {
+      q: `${unique.join(' OR ')} weather traveler reports rain delay beach hotel`,
+      google_domain: 'google.co.in',
+    },
+    (data) =>
+      normalizeOrganic(data, 'news').map((item) => ({
+        ...item,
+        type: 'news' as const,
+        description: item.description ?? 'Public traveler / search signal',
+      })),
+  )
+  const items = [
+    ...news.flatMap((result, index) =>
+      result.items.map((item) => ({
+        ...item,
+        location: item.location ?? unique[index],
+        sourceLabel: 'Google News via SerpApi',
+      })),
+    ),
+    ...reports.items.map((item) => ({
+      ...item,
+      sourceLabel: 'Google Search via SerpApi',
+    })),
+  ]
+  return {
+    items,
+    metas: [...news.map((result) => result.meta), reports.meta],
+    meta: {
+      configured: isSerpConfigured(),
+      engine: 'google_news+google',
+      query: queries.join(' | '),
+      latencyMs: [...news, reports].reduce((sum, result) => sum + result.meta.latencyMs, 0),
+      resultCount: items.length,
+      cache: news.some((result) => result.meta.cache === 'miss') || reports.meta.cache === 'miss' ? 'miss' : 'hit',
+    },
+    message: !isSerpConfigured() ? 'Live search is not configured.' : undefined,
+  }
 }
 
 export async function searchTrains(origin: string, destination: string) {

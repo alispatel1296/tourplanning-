@@ -1,0 +1,14 @@
+{
+  "documentIds": [
+    "document_01m3ggt2kv0swefz",
+    "document_01m3ggt2m51dwaf1",
+    "document_01m3ggt2mcgwr1j3"
+  ],
+  "alignmentId": "alignment_01m3gjzxpwhwmwr5",
+  "alignmentName": "TripFlow Weather Twin v2",
+  "baseModel": "qwen-v2p5-0p5b-instruct",
+  "alignmentStatus": "FAILED",
+  "benchmarkId": "benchmark_01m3ggypaardgxd8",
+  "updatedAt": "2026-09-27T05:30:51.140Z",
+  "alignedModelId": "alignment_01m3ggwq01bh0cm9"
+}

@@ -11,19 +11,16 @@ import {
   RefreshCw,
   ScanSearch,
   ShieldAlert,
-  Sparkles,
   Split,
   Users,
   Waypoints,
 } from 'lucide-react'
 import { Brand } from '@/components/layout/Brand'
-import { Badge } from '@/components/ui/Badge'
 import { Button, IconButton } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Overlay'
 import { ProgressBar, ProgressRing } from '@/components/ui/Progress'
 import { AILabel } from '@/components/domain/AICards'
-import { HeroEngine } from '@/pages/landing/HeroEngine'
 import { AdaptationScene } from '@/pages/landing/AdaptationScene'
 import { OperatorDeskPreview, TravelerPhonePreview } from '@/pages/landing/ExperiencePreviews'
 import { useAppState } from '@/state/AppState'
@@ -107,7 +104,7 @@ const smartFeatures = [
 ]
 
 export function Landing() {
-  const { signIn, signOut, resetDemoJourney } = useAppState()
+  const { signIn } = useAppState()
   const navigate = useNavigate()
   const [legal, setLegal] = useState<'privacy' | 'terms' | null>(null)
   const [menu, setMenu] = useState(false)
@@ -120,44 +117,41 @@ export function Landing() {
     signIn('operator')
     navigate('/operator')
   }
-  const startTravelerDemo = () => {
-    resetDemoJourney()
-    signOut()
-    navigate('/login?demo=traveler&next=/traveler/plan')
-  }
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-          <Brand />
-          <nav className="hidden items-center gap-6 text-sm text-slate-600 lg:flex">
-            <a href="#how" className="hover:text-ink">
+    <div className="min-h-screen bg-[var(--color-surface)]">
+      <header className="absolute inset-x-0 top-0 z-40 border-b border-white/20 bg-transparent">
+        <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-8">
+          <Brand tone="dark" />
+          <nav className="hidden items-center gap-10 text-[15px] font-medium text-white/90 lg:flex tracking-wide">
+            <a href="#how" className="hover:text-white transition-colors">
               How it works
             </a>
-            <a href="#intelligence" className="hover:text-ink">
+            <a href="#intelligence" className="hover:text-white transition-colors">
               Intelligence
             </a>
-            <a href="#features" className="hover:text-ink">
+            <a href="#features" className="hover:text-white transition-colors">
               Features
             </a>
-            <a href="#demo" className="hover:text-ink">
-              Live demo
+            <a href="#walkthrough" className="hover:text-white transition-colors">
+              Live walkthrough
             </a>
           </nav>
-          <div className="flex items-center gap-2">
-            <Link to="/login" className="hidden sm:block">
-              <Button variant="ghost">Sign in</Button>
-            </Link>
-            <Button type="button" onClick={() => enterTraveler('/traveler/plan')}>Plan a Trip</Button>
-            <IconButton label="Menu" className="lg:hidden" onClick={() => setMenu((open) => !open)}>
-              <Menu className="h-4 w-4" />
+          <div className="flex items-center gap-4">
+            <button type="button" onClick={enterOperator} className="hidden sm:block text-[11px] font-bold uppercase tracking-[0.15em] text-white border border-white/30 px-6 py-2.5 transition-colors hover:bg-white/10">
+              Operator
+            </button>
+            <button type="button" className="bg-[var(--color-muted-gold)] text-[var(--color-charcoal)] hover:bg-white/90 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.15em] transition-colors" onClick={() => enterTraveler('/traveler/plan')}>
+              Plan a Journey &rarr;
+            </button>
+            <IconButton label="Menu" className="lg:hidden text-white hover:bg-white/10" onClick={() => setMenu((open) => !open)}>
+              <Menu className="h-5 w-5" />
             </IconButton>
           </div>
         </div>
         {menu ? (
-          <div className="border-t border-line bg-white px-5 py-3 lg:hidden">
-            <div className="flex flex-col gap-2 text-sm">
+          <div className="border-t border-white/10 bg-[var(--color-charcoal)] px-5 py-4 lg:hidden">
+            <div className="flex flex-col gap-4 text-sm text-white">
               <a href="#how" onClick={() => setMenu(false)}>
                 How it works
               </a>
@@ -165,40 +159,72 @@ export function Landing() {
                 Features
               </a>
               <Link to="/login">Sign in</Link>
-              <button type="button" className="text-left text-brand-700" onClick={() => enterOperator()}>
-                Operator demo
+              <button type="button" className="text-left text-[var(--color-muted-gold)]" onClick={() => enterOperator()}>
+                Operator desk
               </button>
             </div>
           </div>
         ) : null}
       </header>
 
-      <section className="hero-wash">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-2 lg:py-16">
-          <div>
-            <Badge tone="ai" className="mb-4">
-              <Sparkles className="h-3 w-3" />
-              AI-Powered Dynamic Tour Planning
-            </Badge>
-            <h1 className="font-display text-[34px] font-semibold leading-[1.12] tracking-tight text-ink sm:text-[40px]">
-              Your trip shouldn't be fixed.
-              <br />
-              Your itinerary should adapt.
-            </h1>
-            <p className="mt-4 max-w-xl text-[16px] text-slate-600">
-              Plan personalized journeys, simulate feasibility, manage bookings, and automatically adapt when real-world
-              conditions change.
+      {/* Massive Cinematic Hero */}
+      <section className="relative h-screen min-h-[800px] flex items-center overflow-hidden bg-[var(--color-charcoal)] pt-20">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=2940&auto=format&fit=crop')] bg-cover bg-center opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-charcoal)]/90 via-transparent to-black/30" />
+        
+        <div className="relative z-10 w-full px-5 max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12">
+          {/* Left Content */}
+          <div className="flex-1 max-w-2xl text-left">
+            <p className="text-[11px] font-bold tracking-[0.2em] text-[var(--color-muted-gold)] uppercase mb-6">
+              The travel operating system
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button type="button" size="lg" onClick={() => enterTraveler('/traveler/plan')}>
-                Plan a Trip
-              </Button>
-              <Button type="button" size="lg" variant="secondary" onClick={startTravelerDemo}>
-                Explore Demo
-              </Button>
+            <h1 className="font-display text-5xl sm:text-6xl md:text-[5rem] lg:text-[6rem] font-bold tracking-tight text-white leading-[0.95] mb-6 flex flex-col uppercase">
+              <span>Plan it.</span>
+              <span>Break it.</span>
+              <span>Watch it<br/>recover.</span>
+            </h1>
+            
+            <p className="mt-4 text-lg md:text-[19px] text-white/90 font-sans font-medium tracking-wide leading-relaxed max-w-md">
+              Five capabilities keep travel feasible. Language is not one of them.
+            </p>
+            
+            <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-center gap-8">
+              <button 
+                type="button"
+                className="bg-[var(--color-muted-gold)] text-[var(--color-charcoal)] px-8 py-4 text-xs font-bold tracking-[0.15em] uppercase transition-transform hover:scale-105 flex items-center gap-2"
+                onClick={() => enterTraveler('/traveler/plan')}
+              >
+                Plan a journey &rarr;
+              </button>
+              
+              <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.15em] text-white/70 uppercase">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Live travel intelligence
+              </div>
             </div>
           </div>
-          <HeroEngine />
+
+          {/* Right Glass Card */}
+          <div className="hidden lg:block w-[420px]">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-8 backdrop-blur-md shadow-2xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 mb-5">
+                Kerala &middot; 6 Days &middot; 4 Travelers
+              </p>
+              <div className="flex flex-col gap-2 font-display text-[26px] font-medium tracking-wide text-white uppercase mb-8 leading-tight">
+                <span>Ahmedabad &rarr; Kochi &rarr;</span>
+                <span>Munnar</span>
+                <span>&rarr; Alleppey</span>
+              </div>
+              <p className="text-[32px] font-light text-[var(--color-muted-gold)] tracking-wide mb-4">
+                ₹78,420 <span className="text-sm font-medium">EST.</span>
+              </p>
+              <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.15em] text-emerald-400 uppercase">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Journey Healthy
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -288,7 +314,7 @@ export function Landing() {
               <li>Budget tracking shows what is spent, held, and still free to use.</li>
             </ul>
             <Button type="button" className="mt-6" onClick={() => enterTraveler('/traveler')}>
-              Open traveler demo
+              Open traveler workspace
             </Button>
           </div>
         </div>
@@ -304,7 +330,7 @@ export function Landing() {
               named owner. Guests keep a living itinerary.
             </p>
             <Button type="button" className="mt-6" variant="secondary" onClick={enterOperator}>
-              View Operator Demo
+              View operator desk
             </Button>
           </div>
           <OperatorDeskPreview />
@@ -329,8 +355,8 @@ export function Landing() {
         </div>
       </section>
 
-      <section id="demo" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16">
-        <p className="meta">Demo scenario</p>
+      <section id="walkthrough" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16">
+        <p className="meta">Live scenario</p>
         <h2 className="section-title mt-2">Watch a trip adapt itself.</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           A Baga water-sports morning meets a rain cell. TripFlow turns the activity red, proposes an indoor food
@@ -354,7 +380,7 @@ export function Landing() {
               Start Planning
             </Button>
             <Button type="button" size="lg" variant="secondary" onClick={enterOperator}>
-              View Operator Demo
+              View operator desk
             </Button>
           </div>
         </div>
@@ -403,13 +429,13 @@ export function Landing() {
       >
         {legal === 'privacy' ? (
           <p className="text-sm text-slate-600">
-            TripFlow AI’s demo stores role and trip state only in this browser session. No traveler documents or payment
+            TripFlow AI stores role and trip state only in this browser session. No traveler documents or payment
             details leave the device. Production workspaces will keep itineraries in the operator region you choose.
           </p>
         ) : (
           <p className="text-sm text-slate-600">
-            This is a product demonstration. Bookings, inventory holds, and weather signals are simulated so you can
-            evaluate the workflow. They are not confirmed reservations with IRCTC, IndiGo, or any hotel.
+            Bookings, inventory holds, and weather signals in this workspace let you evaluate the workflow. They are
+            not confirmed reservations with IRCTC, IndiGo, or any hotel.
           </p>
         )}
         <Button type="button" className="mt-4" variant="secondary" onClick={() => setLegal(null)}>

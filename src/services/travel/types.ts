@@ -95,6 +95,48 @@ export interface ComposeTripResult {
   message?: string
 }
 
+export interface LivePlanNode {
+  id: string
+  day: number
+  date: string
+  title: string
+  city: string
+  time: string
+  category: 'stay' | 'food' | 'activity' | 'transport' | 'free'
+  status: 'upcoming' | 'alternative'
+  cost: number
+  notes: string
+}
+
+export interface LivePlanResult {
+  title: string
+  narrative: string
+  feasibility: number
+  nodes: LivePlanNode[]
+  sources: string[]
+  model?: string
+}
+
+export interface LiveConflictItem {
+  id: string
+  title: string
+  description: string
+  severity: 'low' | 'medium' | 'high'
+  state: 'open' | 'investigating' | 'resolved'
+  tripId: string
+  tripTitle: string
+  city: string
+  detectedAt: string
+  owner: string
+  source?: string
+}
+
+export interface LiveConflictsResult {
+  conflicts: LiveConflictItem[]
+  sources: string[]
+  model?: string
+}
+
 export interface SerpHealth {
   configured: boolean
   status: 'connected' | 'not_configured'

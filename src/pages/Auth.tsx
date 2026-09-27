@@ -43,7 +43,7 @@ function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="flex min-h-screen bg-[var(--color-warm-ivory)] text-[var(--color-charcoal)]">
       <AuthVisual />
       <div className="flex min-h-screen flex-1 items-center justify-center px-4 py-8 lg:w-[55%]">
         {preparing ? (
@@ -63,9 +63,9 @@ function PreparingState({ nextPath }: { nextPath: string | null }) {
   return (
     <div className="w-full max-w-md text-center">
       <Brand />
-      <div className="ai-generating mx-auto mt-8 max-w-sm rounded-xl border border-brand-100 bg-brand-50 px-5 py-6">
-        <Sparkles className="mx-auto h-5 w-5 text-brand-700" />
-        <p className="mt-3 text-sm font-semibold text-brand-900">
+      <div className="ai-generating mx-auto mt-8 max-w-sm rounded-xl border border-[var(--color-soft-sand)] bg-white px-5 py-6 shadow-sm">
+        <Sparkles className="mx-auto h-5 w-5 text-[var(--color-muted-gold)]" />
+        <p className="mt-3 text-sm font-semibold text-[var(--color-charcoal)]">
           {planner ? 'Opening the Ahmedabad → Mumbai → Goa planner...' : 'Preparing your travel workspace...'}
         </p>
         <p className="mt-1 text-[13px] text-slate-600">
@@ -122,13 +122,13 @@ function LoginForm({
         <Brand />
       </div>
       <div className="mt-8 lg:mt-0">
-        <p className="font-display text-[13px] font-semibold tracking-tight text-ink">TripFlow AI</p>
-        <h1 className="mt-2 font-display text-[32px] font-semibold tracking-tight">Welcome back</h1>
+        <p className="font-display text-[13px] font-bold tracking-[0.2em] uppercase text-[var(--color-muted-gold)]">TripFlow AI</p>
+        <h1 className="mt-2 font-display text-[32px] font-medium tracking-tight text-[var(--color-charcoal)]">Welcome back</h1>
         <p className="mt-1 text-sm text-slate-500">
           {demoHint === 'traveler'
-            ? 'Choose Traveler Demo to open Aarav Shah’s Ahmedabad → Mumbai → Goa brief.'
+            ? 'Choose Traveler to open Aarav Shah’s Ahmedabad → Mumbai → Goa brief.'
             : demoHint === 'operator'
-              ? 'Choose Operator Demo to open the Horizon Trails desk.'
+              ? 'Choose Operator to open the Horizon Trails desk.'
               : 'Sign in to your traveler or operator workspace.'}
         </p>
       </div>
@@ -163,11 +163,11 @@ function LoginForm({
               type="checkbox"
               checked={remember}
               onChange={(event) => setRemember(event.target.checked)}
-              className="h-4 w-4 rounded border-line text-brand-700"
+              className="h-4 w-4 rounded border-[var(--color-soft-sand)] text-[var(--color-ocean)]"
             />
             Remember me
           </label>
-          <button type="button" className="font-medium text-brand-700" onClick={() => setForgotOpen(true)}>
+          <button type="button" className="font-medium text-[var(--color-ocean)] hover:text-[var(--color-charcoal)]" onClick={() => setForgotOpen(true)}>
             Forgot password?
           </button>
         </div>
@@ -184,14 +184,14 @@ function LoginForm({
 
       <div className="mt-5">
         <Button type="button" variant="outline" size="sm" onClick={() => setDemoOpen((open) => !open)}>
-          Try Demo
+          Try workspace
         </Button>
         {demoOpen ? <DemoChoices onPick={onEnter} /> : null}
       </div>
 
       <p className="mt-6 text-sm text-slate-500">
         Don't have an account?{' '}
-        <Link to="/signup" className="font-medium text-brand-700">
+        <Link to="/signup" className="font-medium text-[var(--color-ocean)] hover:text-[var(--color-charcoal)]">
           Create one
         </Link>
       </p>
@@ -222,7 +222,7 @@ function SignupForm({ onEnter }: { onEnter: (role: AuthRole, profile?: { name?: 
     if (Object.values(nextErrors).some(Boolean)) return
     const existing = findAccount(email)
     if (existing && DEMO_BLOCK.has(existing.email)) {
-      setErrors((current) => ({ ...current, email: 'That demo email is reserved. Sign in instead.' }))
+      setErrors((current) => ({ ...current, email: 'That workspace email is reserved. Sign in instead.' }))
       return
     }
     upsertAccount({
@@ -240,8 +240,8 @@ function SignupForm({ onEnter }: { onEnter: (role: AuthRole, profile?: { name?: 
         <Brand />
       </div>
       <div className="mt-8 lg:mt-0">
-        <p className="font-display text-[13px] font-semibold tracking-tight text-ink">TripFlow AI</p>
-        <h1 className="mt-2 font-display text-[32px] font-semibold tracking-tight">Create your workspace</h1>
+        <p className="font-display text-[13px] font-bold tracking-[0.2em] uppercase text-[var(--color-muted-gold)]">TripFlow AI</p>
+        <h1 className="mt-2 font-display text-[32px] font-medium tracking-tight text-[var(--color-charcoal)]">Create your workspace</h1>
         <p className="mt-1 text-sm text-slate-500">Traveler plans and operator desks use the same account model.</p>
       </div>
 
@@ -309,7 +309,7 @@ function SignupForm({ onEnter }: { onEnter: (role: AuthRole, profile?: { name?: 
 
       <p className="mt-6 text-sm text-slate-500">
         Already have an account?{' '}
-        <Link to="/login" className="font-medium text-brand-700">
+        <Link to="/login" className="font-medium text-[var(--color-ocean)] hover:text-[var(--color-charcoal)]">
           Sign in
         </Link>
       </p>
@@ -325,17 +325,17 @@ function DemoChoices({ onPick }: { onPick: (role: AuthRole, profile?: { name?: s
       <button
         type="button"
         onClick={() => onPick('traveler', { name: 'Aarav Shah', email: 'aarav.shah@gmail.com' })}
-        className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-3 text-left transition-colors hover:border-brand-300"
+        className="rounded-xl border border-[var(--color-soft-sand)] bg-[var(--color-warm-ivory)] px-3 py-3 text-left transition-colors hover:border-[var(--color-muted-gold)] hover:bg-white"
       >
-        <p className="text-sm font-semibold">Traveler Demo</p>
+        <p className="text-sm font-semibold">Traveler</p>
         <p className="meta">Aarav Shah · Ahmedabad → Mumbai → Goa</p>
       </button>
       <button
         type="button"
         onClick={() => onPick('operator', { name: 'Meera Kulkarni', email: 'meera@horizontrails.in' })}
-        className="rounded-xl border border-line bg-white px-3 py-3 text-left transition-colors hover:border-brand-200 hover:bg-brand-50"
+        className="rounded-xl border border-[var(--color-soft-sand)] bg-white px-3 py-3 text-left transition-colors hover:border-[var(--color-muted-gold)] hover:bg-[var(--color-warm-ivory)]"
       >
-        <p className="text-sm font-semibold">Operator Demo</p>
+        <p className="text-sm font-semibold">Operator</p>
         <p className="meta">Meera Kulkarni · Horizon Trails desk</p>
       </button>
     </div>
@@ -353,7 +353,7 @@ function GoogleAccounts({
 }) {
   return (
     <Modal open={open} onClose={onClose} title="Continue with Google">
-      <p className="text-sm text-slate-600">Choose a demo identity. No Google request is sent.</p>
+      <p className="text-sm text-slate-600">Choose a workspace identity. No Google request is sent.</p>
       <div className="mt-4 grid gap-2">
         <button
           type="button"
@@ -399,7 +399,7 @@ function ForgotPassword({ open, onClose }: { open: boolean; onClose: () => void 
     >
       {sent ? (
         <p className="text-sm text-slate-600">
-          Reset is simulated for this demo. Use <span className="font-medium">Try Demo</span>, or sign in with the
+          Reset is simulated for this workspace. Use <span className="font-medium">Try workspace</span>, or sign in with the
           password you created.
         </p>
       ) : (
@@ -460,8 +460,8 @@ function Field({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           className={cn(
-            'h-11 w-full rounded-lg border bg-white px-3 text-sm text-ink',
-            error ? 'border-rose-400' : 'border-line focus:border-brand-300',
+            'h-11 w-full rounded-lg border bg-white px-3 text-sm text-[var(--color-charcoal)] focus:outline-none focus:ring-2 focus:ring-[var(--color-muted-gold)]/30',
+            error ? 'border-red-400' : 'border-[var(--color-soft-sand)] focus:border-[var(--color-muted-gold)]',
             isPassword && 'pr-10',
           )}
         />
@@ -498,7 +498,7 @@ function RoleOption({
       onClick={onSelect}
       className={cn(
         'rounded-xl border px-3 py-3 text-left transition-colors',
-        selected ? 'border-emerald-200 bg-emerald-50' : 'border-line bg-white hover:bg-slate-50',
+        selected ? 'border-[var(--color-ocean)] bg-[var(--color-sky)]/30' : 'border-[var(--color-soft-sand)] bg-white hover:bg-[var(--color-warm-ivory)]',
       )}
     >
       <p className="text-sm font-semibold">{label}</p>
@@ -509,10 +509,10 @@ function RoleOption({
 
 function Divider() {
   return (
-    <div className="my-5 flex items-center gap-3 text-[12px] font-medium tracking-[0.12em] text-slate-400">
-      <span className="h-px flex-1 bg-line" />
+    <div className="my-5 flex items-center gap-3 text-[12px] font-medium tracking-[0.12em] text-[var(--color-warm-brown)]">
+      <span className="h-px flex-1 bg-[var(--color-soft-sand)]" />
       OR
-      <span className="h-px flex-1 bg-line" />
+      <span className="h-px flex-1 bg-[var(--color-soft-sand)]" />
     </div>
   )
 }

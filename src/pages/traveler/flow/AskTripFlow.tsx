@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Mic, Sparkles, X } from 'lucide-react'
 import { Button, IconButton } from '@/components/ui/Button'
 import { alternativesFor, type NodeAlternative } from '@/pages/traveler/flow/alternatives'
+import { apiUrl } from '@/lib/api'
 import { listenOnce, speak } from '@/lib/speech'
 import { tipFor, wantsReviews } from '@/pages/traveler/voice/reviews'
 import type { PathMode } from '@/pages/traveler/flow/model'
@@ -51,10 +52,26 @@ export function AskTripFlow({
     const alts = node ? alternativesFor(node) : []
     const tip = tipFor(node)
     const showReviews = wantsReviews(text)
-    const answer = showReviews ? tip.suggestion : reply(text, node, _path, alts)
+    const weatherAsk = /rain|weather|flood|storm|heat|twin|reroute|indoor/i.test(text)
+    const local = showReviews ? tip.suggestion : reply(text, node, _path, alts)
     setReviewsOpen(showReviews)
-    setMessages((current) => [...current, { role: 'user', text }, { role: 'ai', text: answer }])
-    speak(answer)
+    setMessages((current) => [...current, { role: 'user', text }, { role: 'ai', text: local }])
+    speak(local)
+    if (weatherAsk && !showReviews) {
+      void fetch(apiUrl('/api/nugen/ask'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Traveler question: ${text}. Current node: ${node?.title ?? 'none'} in ${node?.city ?? 'unknown'}.`,
+        }),
+      })
+        .then(async (response) => (response.ok ? ((await response.json()) as { content?: string }) : null))
+        .then((data) => {
+          if (!data?.content) return
+          setMessages((current) => [...current, { role: 'ai', text: `Nugen twin: ${data.content}` }])
+        })
+        .catch(() => undefined)
+    }
 
     const lower = text.toLowerCase()
     if (lower.includes('keep current')) {

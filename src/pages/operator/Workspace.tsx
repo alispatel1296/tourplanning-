@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ConflictCard } from '@/components/domain/OperationalCards'
 import { Card } from '@/components/ui/Card'
@@ -11,8 +11,21 @@ export { OperatorAnalytics } from '@/pages/operator/analytics/AnalyticsBoard'
 export { OperatorNotifications } from '@/pages/intelligence/OperatorInbox'
 
 export function OperatorConflicts() {
-  const { conflicts, resolveConflict } = useAppState()
+  const { conflicts, resolveConflict, refreshLiveConflicts, liveSources, generating } = useAppState()
   const [filter, setFilter] = useState<'all' | 'open' | 'investigating' | 'resolved'>('all')
+  const [refreshing, setRefreshing] = useState(false)
+
+  useEffect(() => {
+    void refreshLiveConflicts()
+    // Mount-only: live desk refresh. Later trip edits use the button or generateItinerary.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const refreshDesk = async () => {
+    setRefreshing(true)
+    await refreshLiveConflicts()
+    setRefreshing(false)
+  }
 
   const openCount = conflicts.filter((c) => c.state === 'open').length
   const investigatingCount = conflicts.filter((c) => c.state === 'investigating').length
@@ -24,8 +37,16 @@ export function OperatorConflicts() {
     <div>
       <PageHeader
         title="Conflicts Desk"
-        description="AI-detected inventory, weather, and punctuality issues requiring operator review and approval."
+        description="Live weather, public news, and flight pulses — composed by OpenRouter for operator review. The Baga twin advisory stays so the Digital Twin reroute still works."
+        actions={
+          <Button type="button" size="sm" variant="secondary" loading={refreshing || generating} onClick={() => void refreshDesk()}>
+            Refresh live desk
+          </Button>
+        }
       />
+      {liveSources.length ? (
+        <p className="mb-4 text-[12px] font-medium text-slate-500">Sources: {liveSources.join(' · ')}</p>
+      ) : null}
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <Card className="border-l-4 border-l-rose-500">
@@ -144,7 +165,7 @@ type="button"             variant="secondary"
               navigate('/traveler/live/trip-amd-goa')
             }}
           >
-            Switch to Traveler Demo
+            Switch to traveler workspace
           </Button>
           <Button
 type="button"             variant="ghost"

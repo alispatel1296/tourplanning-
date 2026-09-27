@@ -1,65 +1,33 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Briefcase,
-  CalendarDays,
   CloudSun,
-  Compass,
-  IndianRupee,
-  Layers,
-  MapPin,
-  Radio,
-  Sparkles,
+  Train,
+  ArrowRight,
+  Sun,
   ShieldCheck,
-  Waypoints,
-  ArrowUpRight,
+  ArrowUpRight
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
-import { Card, MetricCard } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { AIInsightCard } from '@/components/domain/AICards'
-import { BudgetMeter } from '@/components/domain/OperationalCards'
-import { MapPanel } from '@/components/domain/MapPanel'
-import { TripSummaryCard } from '@/components/domain/EntityCards'
-import { travelerInsights } from '@/data/demo'
-import { weatherStrip } from '@/pages/traveler/carry/catalog'
 import { useAppState, usePrimaryTrip } from '@/state/AppState'
-import { formatDate, formatINR } from '@/lib/cn'
+import { formatINR } from '@/lib/cn'
 import { getCurrentWeather } from '@/services/weather/weather'
 import { seedLookup } from '@/services/geo/seeds'
 import type { WeatherNow } from '@/services/geo/types'
 
 export function TravelerDashboard() {
-  const { user, trips } = useAppState()
+  const { user } = useAppState()
   const trip = usePrimaryTrip()
   const navigate = useNavigate()
 
-  const [liveWx, setLiveWx] = useState<Array<{ city: string; now: WeatherNow | null; note: string }>>(
-    weatherStrip.map((row: { city: string; note: string }) => ({ city: row.city, now: null, note: row.note })),
-  )
+  const [goaWx, setGoaWx] = useState<WeatherNow | null>(null)
 
   useEffect(() => {
-    void Promise.all(
-      weatherStrip.map(async (row: { city: string; note: string }) => {
-        const pin = seedLookup(row.city)
-        if (!pin) return { city: row.city, now: null, note: row.note }
-        try {
-          const now = await getCurrentWeather(pin.lat, pin.lng)
-          return {
-            city: row.city,
-            now,
-            note:
-              now.precipitationProbability >= 50
-                ? `Rain chance ${now.precipitationProbability}%. Compact rain layer recommended.`
-                : row.note,
-          }
-        } catch {
-          return { city: row.city, now: null, note: row.note }
-        }
-      }),
-    ).then(setLiveWx)
+    const pin = seedLookup('Goa')
+    if (pin) {
+      getCurrentWeather(pin.lat, pin.lng).then(setGoaWx).catch(console.error)
+    }
   }, [])
 
   const firstName = user?.name.split(' ')[0] ?? 'Traveler'
@@ -68,211 +36,160 @@ export function TravelerDashboard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="space-y-10 pb-12"
     >
-      {/* Top Page Header */}
-      <PageHeader
-        eyebrow="Traveler Workspace"
-        title={`Welcome back, ${firstName}`}
-        description={`${trip.route} circuit is ${trip.feasibility}% feasible for ${formatDate(trip.startDate)} – ${formatDate(trip.endDate, 'long')}.`}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button"
-              variant="secondary"
-              icon={<Layers className="h-4 w-4 text-brand-700" />}
-              onClick={() => navigate('/traveler/plan/build')}
-            >
-              Hop-by-Hop Builder
-            </Button>
-            <Button type="button"
-              variant="secondary"
-              icon={<Briefcase className="h-4 w-4" />}
-              onClick={() => navigate('/traveler/carry')}
-            >
-              What to Carry
-            </Button>
-            <Button type="button"
-              variant="primary"
-              icon={<Sparkles className="h-4 w-4" />}
-              onClick={() => navigate('/traveler/plan')}
-            >
-              AI Trip Planner
-            </Button>
-          </div>
-        }
-      />
-
-      {/* Hero CTA Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-brand-200/80 bg-gradient-to-r from-brand-900 via-brand-850 to-slate-900 p-6 text-white shadow-lg">
-        <div className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-brand-500/20 blur-2xl pointer-events-none" />
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
-          <div className="max-w-2xl">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand-400/20 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand-200 border border-brand-400/30">
-                <Sparkles className="h-3 w-3" />
-                Interactive Workflow Engine
+      {/* Cinematic Hero - Editorial Style */}
+      <div 
+        className="relative overflow-hidden rounded-[2rem] bg-[var(--color-charcoal)] shadow-2xl group cursor-pointer min-h-[520px] flex flex-col border border-[var(--color-surface)]"
+        onClick={() => navigate('/traveler/itinerary')}
+      >
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=2874&auto=format&fit=crop')] bg-cover bg-center opacity-80 transition-transform duration-1000 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-[var(--color-charcoal)]/95" />
+        
+        <div className="relative z-10 flex flex-col justify-between h-full flex-1 p-8 md:p-12">
+          {/* Top Bar inside Hero */}
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <p className="font-sans text-xs font-bold tracking-[0.2em] text-[var(--color-muted-gold)] uppercase">
+                Good Morning, {firstName.toUpperCase()}
+              </p>
+              <h1 className="font-display text-3xl md:text-4xl text-white">Your next journey</h1>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white border border-white/20 shadow-sm">
+                6 Days · 2 Travelers
               </span>
-              <span className="inline-flex items-center gap-1 text-xs text-slate-300">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                Feasibility Twin Active
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-white/90 bg-black/30 backdrop-blur-md px-3 py-1 rounded-full border border-black/20">
+                <ShieldCheck className="h-3 w-3 text-[var(--color-muted-gold)]" />
+                Trip readiness 86%
               </span>
             </div>
-            <h2 className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Design & Customize Your Hop-by-Hop Journey
-            </h2>
-            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-              Place train hops, hotel holds, eateries, and activities node by node. Set primary green paths versus yellow alternatives and commit them directly to your live companion.
+          </div>
+          
+          {/* Bottom Hero Content */}
+          <div className="mt-20 flex flex-col justify-end h-full">
+            <p className="font-sans text-sm font-semibold tracking-[0.2em] text-[var(--color-muted-gold)] uppercase mb-3 drop-shadow-md">
+              The West Coast Circuit
             </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button type="button"
-              size="lg"
-              className="bg-white text-brand-950 hover:bg-slate-100 font-semibold"
-              icon={<Compass className="h-4.5 w-4.5" />}
-              onClick={() => navigate('/traveler/plan/build')}
-            >
-              Launch Workflow Builder
-            </Button>
-            <Button type="button"
-              size="lg"
-              variant="ghost"
-              className="text-white hover:bg-white/10"
-              icon={<ArrowUpRight className="h-4.5 w-4.5" />}
-              onClick={() => navigate('/traveler/itinerary')}
-            >
-              View Full Itinerary
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Metrics */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard
-          label="Next Departure"
-          value="15 Oct · 06:10"
-          hint="Vande Bharat 22925 from Ahmedabad Kalupur"
-          icon={<CalendarDays className="h-5 w-5 text-brand-600" />}
-          tone="info"
-        />
-        <MetricCard
-          label="Budget Remaining"
-          value={formatINR(Math.max(0, trip.budget - trip.spent))}
-          hint={`${formatINR(trip.budget)} allocated for ${trip.adults} adults`}
-          icon={<IndianRupee className="h-5 w-5 text-emerald-600" />}
-          tone="success"
-        />
-        <MetricCard
-          label="Circuit Feasibility"
-          value={`${trip.feasibility}%`}
-          hint="Novotel Candolim waitlist hold on review"
-          icon={<Waypoints className="h-5 w-5 text-amber-600" />}
-          tone="warning"
-        />
-      </div>
-
-      {/* Main Grid: Interactive Leaflet Map & My Trips | AI Feeds & Weather */}
-      <div className="grid gap-6 xl:grid-cols-3">
-        {/* Left Column (2 Cols) */}
-        <div className="space-y-6 xl:col-span-2">
-          {/* Real Leaflet Map Component */}
-          <MapPanel
-            title="Real-World Interactive Map & Corridor Route"
-            caption={`${trip.route} · ${trip.nodes.length} connected stops with routing polylines`}
-            nodes={trip.nodes}
-            height={380}
-          />
-
-          {/* Active Circuits Header & List */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-6xl md:text-[7rem] font-medium tracking-tight text-white mb-6 leading-none drop-shadow-lg">
+              GOA
+            </h2>
+            
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-t border-white/10 pt-6">
               <div>
-                <h3 className="font-display text-lg font-semibold text-ink">My Active Circuits</h3>
-                <p className="meta">Your active, planned, and completed journeys</p>
+                <p className="font-sans text-lg font-bold tracking-wider text-white uppercase flex items-center gap-3 mb-2">
+                  Ahmedabad <ArrowRight className="h-4 w-4 text-[var(--color-muted-gold)]" /> Mumbai <ArrowRight className="h-4 w-4 text-[var(--color-muted-gold)]" /> Goa
+                </p>
+                <p className="font-display text-2xl text-white/80">
+                  15–21 October 2026
+                </p>
               </div>
-              <Button type="button" size="sm" variant="ghost" onClick={() => navigate('/traveler/trips')}>
-                View All ({trips.length})
+              
+              <Button type="button"
+                className="bg-white text-[var(--color-charcoal)] hover:bg-[var(--color-soft-sand)] font-bold px-8 py-3 rounded-full shadow-xl transition-all hover:scale-105"
+                onClick={(e) => { e.stopPropagation(); navigate('/traveler/itinerary'); }}
+              >
+                Open journey <ArrowUpRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {trips.map((item) => (
-                <TripSummaryCard
-                  key={item.id}
-                  trip={item}
-                  onOpen={() =>
-                    navigate(
-                      item.status === 'completed'
-                        ? `/traveler/review/${item.id}`
-                        : item.status === 'live'
-                          ? `/traveler/live/${item.id}`
-                          : `/traveler/trips/${item.id}`,
-                    )
-                  }
-                />
-              ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-[1fr_340px] gap-8">
+        {/* Left Column: Route / Glace */}
+        <div className="space-y-8">
+          <div className="bg-white rounded-[2rem] p-8 border-2 border-[var(--color-surface)] shadow-sm">
+            <div className="flex items-center justify-between mb-10">
+              <h3 className="section-title text-[var(--color-charcoal)]">Route Overview</h3>
+              <span className="text-sm font-bold text-[var(--color-charcoal)]/40 uppercase tracking-widest">At a glance</span>
+            </div>
+            
+            <div className="relative">
+              {/* Route Line Connector */}
+              <div className="absolute top-[28px] left-[15%] right-[15%] h-[2px] bg-[var(--color-surface)] hidden md:block" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Node 1 */}
+                <div className="relative flex flex-col items-center text-center group">
+                  <div className="w-5 h-5 rounded-full bg-[var(--color-muted-gold)] border-[6px] border-white relative z-10 mb-4 shadow-sm ring-1 ring-[var(--color-surface)]" />
+                  <p className="meta mb-2 text-[var(--color-muted-gold)]">15 OCT</p>
+                  <h4 className="font-display text-2xl font-bold text-[var(--color-charcoal)] mb-1">Ahmedabad</h4>
+                </div>
+                
+                {/* Node 2 */}
+                <div className="relative flex flex-col items-center text-center group">
+                  <div className="w-5 h-5 rounded-full bg-[var(--color-charcoal)] border-[6px] border-white relative z-10 mb-4 shadow-sm ring-1 ring-[var(--color-surface)]" />
+                  <p className="meta mb-2">17 OCT</p>
+                  <h4 className="font-display text-2xl font-bold text-[var(--color-charcoal)] mb-1">Mumbai</h4>
+                  <p className="text-[13px] font-semibold text-[var(--color-charcoal)]/50">Vande Bharat Express</p>
+                </div>
+
+                {/* Node 3 */}
+                <div className="relative flex flex-col items-center text-center group">
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 border-[6px] border-white relative z-10 mb-4 shadow-sm ring-1 ring-[var(--color-surface)]" />
+                  <p className="meta mb-2">21 OCT</p>
+                  <h4 className="font-display text-2xl font-bold text-[var(--color-charcoal)] mb-1">Goa</h4>
+                  <p className="text-[13px] font-semibold text-[var(--color-charcoal)]/50">Caravela Beach Resort</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column (1 Col) */}
+        {/* Right Column: Widgets */}
         <div className="space-y-6">
-          {/* Live Weather Forecast Feed */}
-          <Card>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="card-title flex items-center gap-1.5">
-                <CloudSun className="h-4 w-4 text-amber-500" />
-                Live Circuit Weather
-              </h3>
-              <Badge tone="info">Open-Meteo</Badge>
+          {/* Up Next Widget */}
+          <div className="bg-[var(--color-charcoal)] text-white rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 text-white/5">
+              <Train className="h-40 w-40" />
             </div>
-            <div className="space-y-3 text-sm">
-              {liveWx.map((row) => (
-                <div key={row.city} className="flex items-center justify-between border-b border-line pb-2.5 last:border-b-0 last:pb-0">
-                  <div>
-                    <p className="font-semibold text-ink flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                      {row.city}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">{row.note}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-brand-900">
-                      {row.now ? `${row.now.temperatureC}°C` : '28°C'}
-                    </p>
-                    <p className="text-[11px] text-slate-500">{row.now?.condition ?? 'Sunny'}</p>
-                  </div>
+            <div className="relative z-10">
+              <p className="text-[11px] font-bold tracking-[0.2em] text-[var(--color-muted-gold)] uppercase mb-6">Up Next</p>
+              <div className="mb-8">
+                <p className="font-display text-5xl mb-2">06:10</p>
+                <p className="text-[15px] font-medium text-white/70">Vande Bharat Express</p>
+              </div>
+              <div className="flex items-center gap-3 text-[14px] font-bold uppercase tracking-wider mb-8 text-[var(--color-muted-gold)]">
+                Ahmedabad <ArrowRight className="h-4 w-4 text-white/40" /> Mumbai
+              </div>
+              <Button type="button" className="w-full rounded-xl bg-white/10 text-white hover:bg-white/20 border border-white/10 font-bold" onClick={() => navigate('/traveler/itinerary')}>
+                View ticket details
+              </Button>
+            </div>
+          </div>
+
+          {/* Weather & Readiness */}
+          <div className="bg-white rounded-[2rem] p-6 border-2 border-[var(--color-surface)] shadow-sm flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold tracking-[0.2em] text-[var(--color-charcoal)]/40 uppercase mb-1">Weather · Goa</p>
+                <div className="flex items-center gap-3">
+                  <h4 className="font-display text-4xl font-bold text-[var(--color-charcoal)]">
+                    {goaWx ? `${goaWx.temperatureC}°` : '28°'}
+                  </h4>
+                  {goaWx && goaWx.precipitationProbability > 50 ? (
+                    <CloudSun className="h-8 w-8 text-[var(--color-ocean)]" />
+                  ) : (
+                    <Sun className="h-8 w-8 text-[var(--color-muted-gold)]" />
+                  )}
                 </div>
-              ))}
+              </div>
+              <div className="text-right">
+                <p className="text-[13px] font-semibold text-[var(--color-charcoal)]/60">
+                  {goaWx ? goaWx.condition : 'Partly cloudy'}
+                </p>
+              </div>
             </div>
-            <Button type="button"
-              size="sm"
-              variant="outline"
-              className="mt-4 w-full"
-              icon={<Radio className="h-3.5 w-3.5" />}
-              onClick={() => navigate('/traveler/carry')}
-            >
-              Open Weather Packing Kit
-            </Button>
-          </Card>
+          </div>
 
-          {/* Budget Health Meter */}
-          <BudgetMeter spent={trip.spent} budget={trip.budget} />
-
-          {/* AI Insights Feed */}
-          <div className="space-y-3">
-            <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-slate-400">
-              AI Intelligence Feed
-            </h3>
-            {travelerInsights.map((insight) => (
-              <AIInsightCard
-                key={insight.id}
-                {...insight}
-                onAction={() =>
-                  navigate(insight.id === 'ai-2' ? '/traveler/itinerary' : '/traveler/prep')
-                }
-              />
-            ))}
+          <div className="bg-[var(--color-surface)] rounded-[2rem] p-6 border border-white shadow-sm flex items-center justify-between">
+            <span className="text-[13px] font-bold uppercase tracking-wider text-[var(--color-charcoal)]">Budget</span>
+            <div className="text-right">
+              <span className="font-display text-2xl font-bold text-[var(--color-charcoal)]">{formatINR(Math.max(0, trip.budget - trip.spent))}</span>
+              <span className="text-[11px] font-bold text-[var(--color-charcoal)]/40 uppercase tracking-widest block">remaining</span>
+            </div>
           </div>
         </div>
       </div>

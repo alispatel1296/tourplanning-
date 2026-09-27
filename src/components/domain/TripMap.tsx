@@ -81,7 +81,14 @@ export function TripMap({
     layerRef.current = L.layerGroup().addTo(map)
     map.setView([19.08, 72.88], 5)
     mapRef.current = map
+    const resize = window.setTimeout(() => map.invalidateSize(), 120)
+    const observer = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(() => map.invalidateSize())
+    if (host.current) observer?.observe(host.current)
     return () => {
+      window.clearTimeout(resize)
+      observer?.disconnect()
       map.remove()
       mapRef.current = null
       layerRef.current = null

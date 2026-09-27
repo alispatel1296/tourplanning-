@@ -34,6 +34,7 @@ export function ConflictCard({
       <p className="mt-1 text-sm text-slate-600">{conflict.description}</p>
       <p className="meta mt-2">
         {conflict.tripTitle} · {conflict.city} · {conflict.owner}
+        {conflict.source ? ` · ${conflict.source}` : ''}
       </p>
       {conflict.state !== 'resolved' ? (
         <div className="mt-3 flex flex-wrap gap-2">

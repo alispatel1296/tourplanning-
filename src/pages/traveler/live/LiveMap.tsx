@@ -31,7 +31,7 @@ export function LiveMap({
       selectedId={selectedId ?? current?.id}
       userLocation={userLocation}
       onSelect={onSelect}
-      height={280}
+      height={380}
       loading={loading}
       error={error}
       onRetry={retry}

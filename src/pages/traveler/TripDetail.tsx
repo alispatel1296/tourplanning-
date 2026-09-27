@@ -26,7 +26,7 @@ import type { TripNode } from '@/types'
 
 export function TripDetail() {
   const { id } = useParams()
-  const { trips, deleteTripNode, applyNodePatch, pushToast, markNodeVisited, updateNodeStatus } =
+  const { trips, deleteTripNode, applyNodePatch, pushToast, markNodeVisited, updateNodeStatus, refreshLivePlan, generating, liveSources } =
     useAppState()
   const trip = trips.find((item) => item.id === id) ?? trips[0]
   const navigate = useNavigate()
@@ -41,6 +41,7 @@ export function TripDetail() {
   const [compareAlt, setCompareAlt] = useState<NodeAlternative | null>(null)
   const [leaving, setLeaving] = useState<TripNode | null>(null)
   const [activeDay, setActiveDay] = useState<number>(1)
+  const liveTrips = trips.filter((item) => item.nodes.length > 0)
 
   useEffect(() => {
     const sync = () => setMobile(window.innerWidth < 1024)
@@ -63,9 +64,19 @@ export function TripDetail() {
     if (!trip) return
     const main = trip.nodes.filter((node) => node.status !== 'alternative')
     if (!main.length) return
+    const current = main.find((node) => node.status === 'active') ?? main[0]
+    setActiveDay(current.day)
     const progressed = main.some((node) => node.status === 'active' || node.status === 'visited')
     if (!progressed) updateNodeStatus(trip.id, main[0].id, 'active')
   }, [trip, updateNodeStatus])
+
+  useEffect(() => {
+    if (!trip || trip.status === 'completed') return
+    const key = `tf-flow-live-${trip.id}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    void refreshLivePlan(trip.id)
+  }, [trip, refreshLivePlan])
 
   const planned = trip ? plannedSpend({ ...trip, nodes }, path) - save : 0
   const health = calculateBudgetHealth(trip?.budget ?? 0, planned)
@@ -75,7 +86,7 @@ export function TripDetail() {
       <EmptyState
         icon={<Sparkles className="h-5 w-5" />}
         title="Trip not found"
-        body="That trip id is not in the demo workspace."
+        body="That trip id is not in this workspace."
         action={<Button type="button" onClick={() => navigate('/traveler/trips')}>Back to trips</Button>}
       />
     )
@@ -148,6 +159,21 @@ export function TripDetail() {
               {trip.route} · {formatDate(trip.startDate)} – {formatDate(trip.endDate, 'long')}
             </p>
           </div>
+          <label className="hidden min-w-[200px] sm:block">
+            <span className="sr-only">Switch trip</span>
+            <select
+              value={trip.id}
+              onChange={(event) => navigate(`/traveler/trips/${event.target.value}`)}
+              className="w-full rounded-xl border border-slate-700 bg-[#101823] px-3 py-2 text-xs font-semibold text-slate-200 outline-none"
+            >
+              {liveTrips.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.status === 'live' ? 'Live · ' : item.status === 'completed' ? 'Done · ' : 'Plan · '}
+                  {item.title}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {/* Middle: Running Total + Slim Budget Health Meter */}
@@ -208,6 +234,18 @@ export function TripDetail() {
             {view === 'map' ? <Layers className="h-3.5 w-3.5" /> : <Map className="h-3.5 w-3.5" />}
             <span>{view === 'map' ? 'Canvas View' : 'Map View'}</span>
           </button>
+          <button
+            type="button"
+            disabled={generating}
+            onClick={() => {
+              sessionStorage.removeItem(`tf-flow-live-${trip.id}`)
+              void refreshLivePlan(trip.id)
+            }}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-[#101823] px-3 py-2 text-xs font-bold text-slate-200 hover:border-[#3FA772] disabled:opacity-50"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {generating ? 'Composing…' : 'Rebuild live flow'}
+          </button>
         </div>
       </div>
 
@@ -237,6 +275,11 @@ export function TripDetail() {
 
         {/* Center Base Layer: Graph Canvas / Map View */}
         <main className="relative flex-1 overflow-hidden bg-[#101823]">
+          {generating ? (
+            <div className="absolute inset-x-0 top-0 z-20 border-b border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-100">
+              Pulling live flights, stays, and places{liveSources.length ? ` · ${liveSources.join(' · ')}` : ''} — the map and day columns will update in place.
+            </div>
+          ) : null}
           {view === 'map' ? (
             <div className="h-full w-full">
               <TripMap

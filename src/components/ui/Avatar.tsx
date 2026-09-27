@@ -18,7 +18,7 @@ export function Avatar({ initials, name, size = 'md', className }: AvatarProps) 
     <div
       title={name}
       className={cn(
-        'inline-flex items-center justify-center rounded-full bg-brand-700 font-semibold text-white',
+        'inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] font-semibold text-[var(--color-warm-ivory)] border border-[var(--color-muted-gold)]/30 shadow-sm',
         sizes[size],
         className,
       )}

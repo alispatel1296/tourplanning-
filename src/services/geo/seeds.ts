@@ -15,6 +15,11 @@ export const CITY_SEEDS: Record<string, GeoPoint> = {
   ponda: seed({ lat: 15.401, lng: 74.007, formattedAddress: 'Ponda, Goa, India', city: 'Ponda', state: 'Goa', country: 'India' }),
   kalupur: seed({ lat: 23.028, lng: 72.601, formattedAddress: 'Kalupur Railway Station, Ahmedabad', city: 'Ahmedabad', state: 'Gujarat', country: 'India' }),
   andheri: seed({ lat: 19.1136, lng: 72.8697, formattedAddress: 'Andheri, Mumbai, India', city: 'Mumbai', state: 'Maharashtra', country: 'India' }),
+  shimla: seed({ lat: 31.1048, lng: 77.1734, formattedAddress: 'Shimla, Himachal Pradesh, India', city: 'Shimla', state: 'Himachal Pradesh', country: 'India' }),
+  manali: seed({ lat: 32.2432, lng: 77.1892, formattedAddress: 'Manali, Himachal Pradesh, India', city: 'Manali', state: 'Himachal Pradesh', country: 'India' }),
+  chandigarh: seed({ lat: 30.7333, lng: 76.7794, formattedAddress: 'Chandigarh, India', city: 'Chandigarh', state: 'Chandigarh', country: 'India' }),
+  jaipur: seed({ lat: 26.9124, lng: 75.7873, formattedAddress: 'Jaipur, Rajasthan, India', city: 'Jaipur', state: 'Rajasthan', country: 'India' }),
+  rishikesh: seed({ lat: 30.0869, lng: 78.2676, formattedAddress: 'Rishikesh, Uttarakhand, India', city: 'Rishikesh', state: 'Uttarakhand', country: 'India' }),
 }
 
 export const PLACE_SEEDS: Record<string, GeoPoint> = {

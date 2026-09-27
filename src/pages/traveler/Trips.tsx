@@ -39,7 +39,7 @@ export function Trips() {
   const [deletedIds, setDeletedIds] = useState<string[]>([])
   
   const saved = params.get('view') === 'saved'
-  const tab = (params.get('tab') as LifeTab) || 'upcoming'
+  const tab = (params.get('tab') as LifeTab) || 'ongoing'
   const navigate = useNavigate()
 
   const trips = allTrips.filter((t) => !deletedIds.includes(t.id))
@@ -381,30 +381,62 @@ function LifeCard({
       {/* Action Footer */}
       <div className="mt-6 flex items-center gap-2 border-t border-line pt-3">
         {live ? (
-          <Button type="button"
-            size="sm"
-            icon={<Radio className="h-3.5 w-3.5" />}
-            onClick={(e) => {
-              e.stopPropagation()
-              onOpenLive()
-            }}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            Open Live Companion
-          </Button>
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              icon={<ArrowRight className="h-3.5 w-3.5" />}
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenPlan()
+              }}
+              className="flex-1"
+            >
+              Map & Flow
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              icon={<Radio className="h-3.5 w-3.5" />}
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenLive()
+              }}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Live
+            </Button>
+          </>
         ) : done ? (
-          <Button type="button"
-            size="sm"
-            variant="secondary"
-            icon={<Star className="h-3.5 w-3.5 text-amber-500" />}
-            onClick={(e) => {
-              e.stopPropagation()
-              onOpenReview()
-            }}
-            className="w-full"
-          >
-            Post-Trip Review
-          </Button>
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              icon={<ArrowRight className="h-3.5 w-3.5" />}
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenPlan()
+              }}
+              className="flex-1"
+            >
+              Map & Flow
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              icon={<Star className="h-3.5 w-3.5 text-amber-500" />}
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenReview()
+              }}
+              className="flex-1"
+            >
+              Review
+            </Button>
+          </>
         ) : (
           <>
             <Button

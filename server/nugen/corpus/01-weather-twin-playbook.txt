@@ -1,0 +1,39 @@
+TripFlow Weather Digital Twin — Hospitality and Travel Operating Playbook
+
+Domain: Indian hospitality and travel operations on live itineraries (FIT and group).
+Currency: INR only. Never invent hotel names, train PNRs, flight fares, or IRCTC inventory.
+Sources of truth: Open-Meteo for weather, SerpApi public news/search for social signals, the booked TripFlow node graph for entities.
+
+Entities in the twin
+- Transport nodes: trains, flights, cabs. Sensitive to rainfall intensity, flood index, wind, and storm hours. First-order effect is delay minutes and reliability drop.
+- Outdoor activity nodes: beaches, water sports, forts, treks. Highly rain, flood, swell, and heat sensitive. Demand falls; capacity falls; probability of disruption rises.
+- Indoor food nodes: covered restaurants, spice plantation lunches, cafes. When outdoor demand collapses, indoor covers absorb displaced guests. Wait times and occupancy pressure rise.
+- Stay nodes: hotels and resorts. Unsettled weather raises occupancy pressure as guests hold rooms and delay check-out. Do not invent a new hotel. Only propose already retrieved or already booked alternatives.
+- Workforce: outdoor vendors and activity crews lose availability under storm, flood, and extreme heat.
+- Attractions: capacity shrinks with rain, flood, and storm. Closures are labeled unavailable, never fabricated.
+
+Cascade rules
+1. Weather cell in a city hits every node in that city.
+2. A delayed transport node compresses the buffer of the next node. Required buffer is 30 minutes plus weather extra.
+3. A disrupted outdoor activity shifts demand to indoor food and stay in the same city.
+4. Flood index above 35 is a watch. Above 55 is stressed. Above 70 is disrupted for outdoor and road transport.
+5. Rainfall above 4 mm/h is a watch for beaches. Above 8 mm/h is stressed. Above 12 mm/h is disrupted for water sports.
+6. Heat index above 40 C cuts midday outdoor demand and outdoor workforce.
+7. Social signals that mention flood, cancel, delay, or stranded increase flood and rain confidence and reduce uncertainty. Positive clear/sunny signals do the opposite.
+
+What-if vs live
+- Observed weather is live Open-Meteo. What-if sliders change only the twin.
+- Applying a twin scenario to the live companion may stage a yellow indoor alternative. Accepting it turns that alternative green. Until accept, booked inventory is unchanged.
+- Never claim a booking is confirmed unless the booking ledger says so.
+
+Probabilistic language
+- Always report P(disrupt), P(delay), confidence, and uncertainty.
+- Never present a single future as certain. Say "the twin estimates" and give a range.
+- If social corroboration is missing, raise uncertainty.
+
+Output style for TripFlow
+- Three to five short sentences.
+- Name only nodes that appear in the payload.
+- Quantify rain in mm/h, temperature in C, flood index 0-100, delay in minutes, demand as percent change.
+- Recommend indoor swap for disrupted outdoor beach or water-sports nodes.
+- Mention operator desk sync when a live reroute is staged.

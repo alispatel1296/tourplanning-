@@ -16,9 +16,13 @@ import {
   searchRestaurants,
   searchReviews,
   searchShopping,
+  searchSocialSignals,
   searchTravelInformation,
   searchTrains,
 } from './travelDataService'
+import { explainTwinNarrative } from './twinExplain'
+import { buildLivePlan } from './dynamicPlan'
+import { buildLiveConflicts } from './dynamicConflicts'
 
 function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve) => {
@@ -128,7 +132,25 @@ export async function handleTravelRequest(req: IncomingMessage, res: ServerRespo
     else if (path === '/api/travel/local') send(res, 200, await searchLocalBusinesses(str(body, 'q')))
     else if (path === '/api/travel/maps') send(res, 200, await searchMaps(str(body, 'q')))
     else if (path === '/api/travel/news') send(res, 200, await searchNews(str(body, 'q', 'Goa travel')))
-    else if (path === '/api/travel/compose') {
+    else if (path === '/api/travel/social-signals') {
+      const cities = Array.isArray(body.cities) ? body.cities.map(String) : [str(body, 'city', 'Goa')]
+      send(res, 200, await searchSocialSignals(cities))
+    } else if (path === '/api/travel/twin-explain') {
+      send(
+        res,
+        200,
+        await explainTwinNarrative({
+          title: str(body, 'title') || undefined,
+          rainfallMmH: num(body, 'rainfallMmH'),
+          temperatureC: num(body, 'temperatureC'),
+          floodIndex: num(body, 'floodIndex'),
+          stormHours: num(body, 'stormHours'),
+          stressed: Array.isArray(body.stressed) ? body.stressed.map(String) : undefined,
+          social: Array.isArray(body.social) ? body.social.map(String) : undefined,
+          whatIf: body.whatIf === true,
+        }),
+      )
+    } else if (path === '/api/travel/compose') {
       send(
         res,
         200,
@@ -142,6 +164,42 @@ export async function handleTravelRequest(req: IncomingMessage, res: ServerRespo
           startDate: str(body, 'startDate') || undefined,
           endDate: str(body, 'endDate') || undefined,
           brief: str(body, 'brief') || undefined,
+        }),
+      )
+    } else if (path === '/api/travel/plan-live') {
+      const destinations = Array.isArray(body.destinations)
+        ? body.destinations.map(String).filter(Boolean)
+        : [str(body, 'destination', 'Goa')]
+      send(
+        res,
+        200,
+        await buildLivePlan({
+          origin: str(body, 'origin', 'Ahmedabad'),
+          destinations,
+          startDate: str(body, 'startDate', str(body, 'checkIn')),
+          endDate: str(body, 'endDate', str(body, 'checkOut')),
+          adults: num(body, 'adults') ?? 2,
+          budget: num(body, 'budget') ?? 65000,
+          styles: Array.isArray(body.styles)
+            ? body.styles.map(String)
+            : Array.isArray(body.interests)
+              ? body.interests.map(String)
+              : [],
+          transport: str(body, 'transport', 'Mixed'),
+          accommodation: str(body, 'accommodation', 'Premium'),
+          brief: str(body, 'brief') || undefined,
+        }),
+      )
+    } else if (path === '/api/travel/conflicts-live') {
+      const cities = Array.isArray(body.cities) ? body.cities.map(String).filter(Boolean) : [str(body, 'city', 'Goa')]
+      send(
+        res,
+        200,
+        await buildLiveConflicts({
+          tripId: str(body, 'tripId', 'trip-live'),
+          tripTitle: str(body, 'tripTitle', 'Live circuit'),
+          cities,
+          origin: str(body, 'origin') || undefined,
         }),
       )
     } else send(res, 404, { message: 'Unknown travel route' })
