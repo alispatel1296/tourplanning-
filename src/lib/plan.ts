@@ -70,22 +70,26 @@ export const styleOptions = [
   'Beach',
 ]
 
+/** Type these two in Plan — live compose returns a full day-wise circuit. */
+export const DEMO_PLAN_CITIES = ['Jaipur', 'Udaipur'] as const
+export const DEMO_PLAN_BRIEF = 'Jaipur and Udaipur, 6 days from Ahmedabad'
+
 export const defaultPlan: TripPlan = {
   origin: 'Ahmedabad',
-  destinations: ['Mumbai', 'Goa'],
-  startDate: '2026-10-15',
-  endDate: '2026-10-21',
+  destinations: [...DEMO_PLAN_CITIES],
+  startDate: '2026-10-22',
+  endDate: '2026-10-27',
   adults: 2,
   children: 0,
   infants: 0,
   companion: 'Couple',
-  styles: ['Adventure', 'Food', 'Beach', 'Photography'],
+  styles: ['Culture', 'Food', 'Photography'],
   accommodation: 'Premium',
   transport: 'Mixed',
   food: ['Local', 'Street Food'],
   intensity: 'Balanced',
-  budget: 65000,
-  brief: '',
+  budget: 72000,
+  brief: DEMO_PLAN_BRIEF,
 }
 
 export function routeCities(plan: TripPlan) {
@@ -234,7 +238,7 @@ export function parseBrief(text: string) {
   if (lower.includes('culture') || lower.includes('heritage') || lower.includes('temple')) styles.push('Culture')
   const days = dayMatch ? Number(dayMatch[1]) : nightMatch ? Number(nightMatch[1]) + 1 : undefined
   return {
-    destinations: [...new Set(found)],
+    destinations: [...new Set(found)].slice(0, 2),
     days,
     styles: [...new Set(styles)],
   }
@@ -244,7 +248,16 @@ export function loadPlan(): TripPlan | null {
   const raw = localStorage.getItem(PLAN_KEY)
   if (!raw) return null
   try {
-    return { ...defaultPlan, ...(JSON.parse(raw) as TripPlan) }
+    const stored = JSON.parse(raw) as TripPlan
+    const dests = stored.destinations ?? []
+    const leftoverWestCoast =
+      dests.length === 2 && dests.includes('Mumbai') && dests.includes('Goa') && !stored.brief?.trim()
+    if (leftoverWestCoast) return { ...defaultPlan }
+    return {
+      ...defaultPlan,
+      ...stored,
+      destinations: dests.length ? dests.slice(0, 2) : [...DEMO_PLAN_CITIES],
+    }
   } catch {
     return null
   }

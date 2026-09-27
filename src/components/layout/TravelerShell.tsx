@@ -25,7 +25,7 @@ import { cn } from '@/lib/cn'
 const nav = [
   { to: '/traveler', label: 'Home', icon: LayoutDashboard, end: true },
   { to: '/traveler/explore', label: 'Explore', icon: Compass },
-  { to: '/traveler/trips', label: 'My Trips', icon: Briefcase },
+  { to: '/traveler/trips?tab=upcoming', label: 'My Trips', icon: Briefcase },
   { to: '/traveler/plan', label: 'Plan', icon: Sparkles },
   { to: '/traveler/map', label: 'Map', icon: MapIcon },
   { to: '/traveler/live/trip-amd-goa', label: 'Live', icon: Radio },
@@ -36,7 +36,7 @@ const nav = [
 
 const mobileNav = [
   { to: '/traveler', label: 'Home', icon: LayoutDashboard, end: true },
-  { to: '/traveler/trips', label: 'Trips', icon: Compass },
+  { to: '/traveler/trips?tab=upcoming', label: 'Trips', icon: Compass },
   { to: '/traveler/plan', label: 'Plan', icon: Sparkles },
   { to: '/traveler/live/trip-amd-goa', label: 'Live', icon: Radio },
   { to: '/traveler/predict/trip-amd-goa', label: 'Predict', icon: ShieldAlert },
@@ -79,7 +79,7 @@ export function TravelerShell() {
       { id: 'explore', label: 'Explore destinations', hint: 'Places', to: '/traveler/explore' },
       { id: 'plan', label: 'Plan a trip', hint: 'AI planner', to: '/traveler/plan' },
       { id: 'map', label: 'Trip map', hint: 'Route', to: '/traveler/map' },
-      { id: 'trips', label: 'My trips', hint: 'Circuits', to: '/traveler/trips' },
+      { id: 'trips', label: 'My trips', hint: 'Upcoming', to: '/traveler/trips?tab=upcoming' },
       { id: 'live', label: 'Live trip', hint: 'On the move', to: liveTo },
       { id: 'twin', label: 'Weather Digital Twin', hint: 'What-if', to: twinTo },
       { id: 'predict', label: 'Predictive emergency', hint: 'USP', to: predictTo },

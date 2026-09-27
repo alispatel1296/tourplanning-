@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Check, ChevronLeft, ChevronRight, Sparkles, Wallet } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles, Wallet } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -18,19 +18,23 @@ import {
   deltaTone,
   deltaVs,
   hopComplete,
+  hopsWithLive,
   loadBuilder,
   persistBuilder,
   primarySpend,
   recommendedOf,
   recommendedSpend,
+  setLiveHopOverlay,
   type BuilderState,
   type HopPick,
 } from '@/pages/traveler/plan/builder/model'
-import { hopsFor, SOFT_DELTA, type HopOption, type PlanHop } from '@/pages/traveler/plan/builder/catalog'
+import { SOFT_DELTA, type HopOption, type PlanHop } from '@/pages/traveler/plan/builder/catalog'
+import { loadLiveHop } from '@/pages/traveler/plan/builder/liveHops'
 
 export function PlanBuilder() {
   const { plan, commitBuiltTrip, generateItinerary, pushToast } = useAppState()
-  const hops = useMemo(() => hopsFor(plan), [plan])
+  const [liveTick, setLiveTick] = useState(0)
+  const hops = useMemo(() => hopsWithLive(plan), [plan, liveTick])
   const [state, setState] = useState<BuilderState>(() => loadBuilder(plan))
   const [detail, setDetail] = useState<HopOption | null>(null)
   const [customModal, setCustomModal] = useState(false)
@@ -39,11 +43,42 @@ export function PlanBuilder() {
   const [customTime, setCustomTime] = useState('07:30')
   const [customSummary, setCustomSummary] = useState('')
   const [customOptions, setCustomOptions] = useState<Record<string, HopOption[]>>({})
+  const [liveStatus, setLiveStatus] = useState<'idle' | 'loading' | 'live' | 'fallback'>('idle')
+  const [liveSource, setLiveSource] = useState<string | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
     persistBuilder(state)
   }, [state])
+
+  useEffect(() => {
+    const first = hopsWithLive(plan)[0]
+    if (!first || (first.kind !== 'cab' && first.id !== 'home-cab')) return
+    let cancelled = false
+    setLiveStatus('loading')
+    void loadLiveHop(first, plan)
+      .then((pack) => {
+        if (cancelled) return
+        if (!pack?.options.length) {
+          setLiveStatus('fallback')
+          return
+        }
+        setLiveHopOverlay(first.id, pack.options, { narrator: pack.narrator, question: pack.question })
+        setLiveSource(pack.source)
+        setLiveStatus('live')
+        setLiveTick((value) => value + 1)
+        setState((current) => ({
+          ...current,
+          picks: { ...current.picks, [first.id]: { primaryId: null, alternativeIds: [] } },
+        }))
+      })
+      .catch(() => {
+        if (!cancelled) setLiveStatus('fallback')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [plan.origin, plan.destinations.join('|'), plan.startDate])
 
   const hop = hops[state.hopIndex] ?? hops[0]
   const currentHopOptions = useMemo(() => {
@@ -61,7 +96,8 @@ export function PlanBuilder() {
   const doneCount = hops.filter((item) => hopComplete(state.picks[item.id])).length
   const last = state.hopIndex === hops.length - 1
   const cheapest = cheapestOf(hop)
-  const hopSave = recommendedOf(hop).price - cheapest.price
+  const recommended = recommendedOf(hop)
+  const hopSave = recommended && cheapest ? recommended.price - cheapest.price : 0
 
   const patchHop = (next: HopPick) => {
     setState((current) => ({
@@ -192,6 +228,18 @@ export function PlanBuilder() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-brand-700">TripFlow</p>
             <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink">{hop.narrator}</p>
             <p className="mt-2 text-sm text-slate-600">{hop.question}</p>
+            {state.hopIndex === 0 ? (
+              <p className="mt-3 flex items-center gap-2 text-[12px] font-semibold text-slate-500">
+                {liveStatus === 'loading' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                {liveStatus === 'loading'
+                  ? `Searching live cabs and transfers in ${hop.city}…`
+                  : liveStatus === 'live'
+                    ? liveSource ?? 'Live operators from SerpApi maps'
+                    : liveStatus === 'fallback'
+                      ? 'Live search quiet — showing structured pickups'
+                      : null}
+              </p>
+            ) : null}
           </Card>
 
           {hopSave > 0 ? (
@@ -204,7 +252,9 @@ export function PlanBuilder() {
           ) : null}
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Available Options for {hop.city}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              {state.hopIndex === 0 && liveStatus === 'live' ? `Live pickups in ${hop.city}` : `Available options for ${hop.city}`}
+            </p>
             <Button type="button" size="sm" variant="secondary" onClick={() => setCustomModal(true)}>
               + Add Custom Train / Option
             </Button>
@@ -223,7 +273,7 @@ export function PlanBuilder() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-display text-[16px] font-semibold">{option.name}</p>
                         <TagBadge tag={option.tag} />
-                        {option.id === cheapest.id ? <Badge tone="success">Save</Badge> : null}
+                        {cheapest && option.id === cheapest.id ? <Badge tone="success">Save</Badge> : null}
                       </div>
                       <p className="meta mt-1">
                         {option.time} · {option.duration}

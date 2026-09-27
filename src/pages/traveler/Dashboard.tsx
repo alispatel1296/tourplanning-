@@ -163,6 +163,21 @@ export function TravelerDashboard() {
 
           <button
             type="button"
+            className="w-full rounded-[2rem] border border-sky-100 bg-sky-50 p-6 text-left shadow-sm transition hover:border-sky-200"
+            onClick={() => navigate(`/traveler/twin/${trip.id}`)}
+          >
+            <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-sky-800">
+              <CloudSun className="h-3.5 w-3.5" />
+              Auto replan · rain & shock
+            </p>
+            <p className="mt-2 font-display text-2xl text-[var(--color-charcoal)]">High rain rewrites from that day</p>
+            <p className="mt-1 text-sm text-slate-600">
+              Twin detects a wet cell, shows hop swaps and budget change, then you apply. Same panel on Twin, Predict, and Live.
+            </p>
+          </button>
+
+          <button
+            type="button"
             className="w-full rounded-[2rem] border border-rose-100 bg-rose-50 p-6 text-left shadow-sm transition hover:border-rose-200"
             onClick={() => navigate(`/traveler/predict/${trip.id}`)}
           >

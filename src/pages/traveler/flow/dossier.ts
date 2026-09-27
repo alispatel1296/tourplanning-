@@ -1,3 +1,4 @@
+import { citySeed } from '@/services/geo/seeds'
 import { demoVendors } from '@/data/demo'
 import { alternativesFor } from '@/pages/traveler/flow/alternatives'
 import type { Alternative, Trip, TripNode } from '@/types'
@@ -46,6 +47,23 @@ const cityPin: Record<string, { lat: number; lng: number; area: string }> = {
   Panaji: { lat: 15.4909, lng: 73.8278, area: 'Latin Quarter' },
   Palolem: { lat: 15.01, lng: 74.023, area: 'South Goa' },
   Goa: { lat: 15.2993, lng: 74.124, area: 'North / South Goa' },
+  Srinagar: { lat: 34.0837, lng: 74.7973, area: 'Dal / old city' },
+  Gulmarg: { lat: 34.0484, lng: 74.3805, area: 'Meadows and gondola' },
+  Pahalgam: { lat: 34.0161, lng: 75.3152, area: 'Lidder valley' },
+  Jaipur: { lat: 26.9124, lng: 75.7873, area: 'Pink City' },
+  Udaipur: { lat: 24.5854, lng: 73.7125, area: 'Lake Pichola' },
+  Delhi: { lat: 28.6139, lng: 77.209, area: 'Central Delhi' },
+  Agra: { lat: 27.1767, lng: 78.0081, area: 'Taj precinct' },
+  Kochi: { lat: 9.9312, lng: 76.2673, area: 'Fort Kochi' },
+  Alleppey: { lat: 9.4981, lng: 76.3388, area: 'Backwaters' },
+  Munnar: { lat: 10.0889, lng: 77.0595, area: 'Tea ridges' },
+  Manali: { lat: 32.2432, lng: 77.1892, area: 'Old Manali' },
+  Shimla: { lat: 31.1048, lng: 77.1734, area: 'The Ridge' },
+  Varanasi: { lat: 25.3176, lng: 82.9739, area: 'Ghats' },
+  Pondicherry: { lat: 11.9416, lng: 79.8083, area: 'French quarter' },
+  Hampi: { lat: 15.335, lng: 76.46, area: 'Boulder ruins' },
+  Bengaluru: { lat: 12.9716, lng: 77.5946, area: 'Garden city' },
+  Rishikesh: { lat: 30.0869, lng: 78.2676, area: 'Ganga' },
 }
 
 const phones: Record<string, string> = {
@@ -84,7 +102,8 @@ export function nodeImage(node: TripNode) {
 
 export function dossierFor(node: TripNode): NodeDossier {
   const vendor = demoVendors.find((item) => item.id === node.vendorId)
-  const pin = cityPin[node.city] ?? cityPin.Goa
+  const seeded = citySeed(node.city)
+  const pin = cityPin[node.city] ?? (seeded ? { lat: seeded.lat, lng: seeded.lng, area: seeded.formattedAddress } : cityPin.Goa)
   const waitlisted = node.id === 'n8' && node.title.toLowerCase().includes('novotel')
   const available = waitlisted ? 'Waitlisted' : node.status === 'disrupted' ? 'Held / weather' : 'Available'
   const availableTone = waitlisted || node.status === 'disrupted' ? 'danger' : node.status === 'alternative' ? 'warning' : 'success'

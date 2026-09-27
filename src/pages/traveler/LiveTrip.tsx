@@ -10,6 +10,7 @@ import type { WeatherNow } from '@/services/geo/types'
 import { Button } from '@/components/ui/Button'
 import { LiveMap } from '@/pages/traveler/live/LiveMap'
 import { EmergencyPredictPanel } from '@/pages/traveler/predict/EmergencyPredictPanel'
+import { AbnormalityReplanPanel } from '@/pages/traveler/twin/AbnormalityReplanPanel'
 import { forecastEmergency } from '@/services/predict/emergencyModel'
 import { useWeatherTwin } from '@/hooks/useWeatherTwin'
 import { useAppState } from '@/state/AppState'
@@ -22,6 +23,7 @@ export function LiveTrip() {
     enterLiveTrip,
     markNodeVisited,
     applyLiveReroute,
+    applyDayReplan,
     keepLivePlan,
     pushToast,
   } = useAppState()
@@ -152,6 +154,13 @@ export function LiveTrip() {
           </div>
         </div>
       ) : null}
+
+      <AbnormalityReplanPanel
+        trip={trip}
+        snapshot={twin.snapshot}
+        compact
+        onApply={(proposal) => applyDayReplan(trip.id, proposal)}
+      />
 
       {/* Disruption Alert / Recovery Flow */}
       {(weatherAlert || (forecast && (forecast.level === 'warning' || forecast.level === 'critical'))) && disruption === 'idle' ? (

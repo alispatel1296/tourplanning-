@@ -30,6 +30,7 @@ import {
 } from '@/lib/booking'
 import { applyLivePlanToTrip, createTripFromPlan, defaultPlan, loadPlan, persistPlan } from '@/lib/plan'
 import { fetchLiveConflicts, planLive } from '@/services/travel/TravelDataService'
+import { applyProposalToNodes, type ReplanProposal } from '@/services/twin/dayReplan'
 import {
   BEACH_NODE_ID,
   INDOOR_ALT_ID,
@@ -93,6 +94,7 @@ interface AppStateValue {
   enterLiveTrip: (tripId: string) => void
   markNodeVisited: (tripId: string, nodeId: string) => void
   applyLiveReroute: (tripId: string, targetId: string, mode: 'stage' | 'accept') => void
+  applyDayReplan: (tripId: string, proposal: ReplanProposal) => void
   keepLivePlan: (tripId: string) => void
   completeTrip: (tripId: string) => void
   resetDemoJourney: () => void
@@ -235,7 +237,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const generateItinerary = useCallback(
     (nextPlan?: TripPlan): string => {
-      const resolved = nextPlan ?? plan
+      const incoming = nextPlan ?? plan
+      const resolved = { ...incoming, destinations: incoming.destinations.slice(0, 2) }
       persistPlan(resolved)
       setPlan(resolved)
       const newTrip = createTripFromPlan(resolved)
@@ -267,6 +270,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           setTrips((current) =>
             current.map((trip) => (trip.id === newTrip.id ? applyLivePlanToTrip(trip, live) : trip)),
           )
+          setGenerating(false)
           const cities = [resolved.origin, ...resolved.destinations]
           const desk = await fetchLiveConflicts({
             tripId: newTrip.id,
@@ -434,6 +438,53 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ])
         pushToast({ title: 'Your itinerary was updated.', body: 'The yellow alternative is now the green live path.' })
       }
+    },
+    [pushToast],
+  )
+
+  const applyDayReplan = useCallback(
+    (tripId: string, proposal: ReplanProposal) => {
+      setTrips((current) =>
+        current.map((trip) => {
+          if (trip.id !== tripId) return trip
+          const nodes = applyProposalToNodes(trip.nodes, proposal)
+          const spent = nodes
+            .filter((node) => node.status === 'visited' || node.status === 'active')
+            .reduce((sum, node) => sum + node.cost, 0)
+          return { ...trip, nodes, spent }
+        }),
+      )
+      setConflicts((current) => [
+        {
+          id: `live-cf-replan-${Date.now()}`,
+          tripId,
+          tripTitle: proposal.headline,
+          title: proposal.headline,
+          description: `${proposal.changes.length} hops rewritten from Day ${proposal.fromDay} in ${proposal.city}. Budget ${proposal.budgetDelta >= 0 ? '+' : ''}₹${Math.abs(proposal.budgetDelta).toLocaleString('en-IN')}.`,
+          severity: proposal.live ? 'high' : 'medium',
+          state: 'open',
+          city: proposal.city,
+          detectedAt: 'Just now',
+          owner: 'Traveler twin',
+          source: proposal.source,
+        },
+        ...current,
+      ])
+      setNotifications((current) => [
+        {
+          id: crypto.randomUUID(),
+          title: 'Itinerary replanned from the wet day',
+          body: `${proposal.city} Day ${proposal.fromDay}: ${proposal.changes[0]?.fromTitle ?? 'outdoor hop'} moved indoors.`,
+          time: 'Just now',
+          tone: 'ai',
+          read: false,
+        },
+        ...current,
+      ])
+      pushToast({
+        title: 'Replan applied',
+        body: `From Day ${proposal.fromDay} in ${proposal.city}. ${proposal.budgetDelta === 0 ? 'Budget unchanged.' : proposal.budgetDelta < 0 ? `Saved ₹${Math.abs(proposal.budgetDelta).toLocaleString('en-IN')}.` : `Added ₹${proposal.budgetDelta.toLocaleString('en-IN')}.`}`,
+      })
     },
     [pushToast],
   )
@@ -691,12 +742,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       enterLiveTrip,
       markNodeVisited,
       applyLiveReroute,
+      applyDayReplan,
       keepLivePlan,
       completeTrip,
       resetDemoJourney,
       commitBuiltTrip,
     }),
-    [user, role, trips, activeTripId, setActiveTripId, bookings, conflicts, notifications, toasts, generating, liveSources, plan, checkout, pushToast, dismissToast, savePlan, generateItinerary, refreshLivePlan, refreshLiveConflicts, enterLiveTrip, markNodeVisited, applyLiveReroute, keepLivePlan, completeTrip, resetDemoJourney, commitBuiltTrip],
+    [user, role, trips, activeTripId, setActiveTripId, bookings, conflicts, notifications, toasts, generating, liveSources, plan, checkout, pushToast, dismissToast, savePlan, generateItinerary, refreshLivePlan, refreshLiveConflicts, enterLiveTrip, markNodeVisited, applyLiveReroute, applyDayReplan, keepLivePlan, completeTrip, resetDemoJourney, commitBuiltTrip],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
@@ -714,7 +766,7 @@ export function usePrimaryTrip() {
     const found = trips.find((trip) => trip.id === activeTripId)
     if (found) return found
   }
-  return trips.find((trip) => trip.id === 'trip-amd-goa') ?? trips[0]
+  return trips.find((trip) => trip.status === 'live') ?? trips.find((trip) => trip.id === 'trip-amd-goa') ?? trips[0]
 }
 
 

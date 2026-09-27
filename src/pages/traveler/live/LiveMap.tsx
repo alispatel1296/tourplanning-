@@ -19,9 +19,12 @@ export function LiveMap({
   onSelect?: (id: string) => void
 }) {
   const { located, routes, loading, error, retry } = useTripGeo(nodes)
-  const caption = current
-    ? `${current.city}${next ? ` → ${next.city}` : ''}`
-    : 'Waiting for a live fix'
+  const cities = [...new Set(nodes.filter((node) => node.status !== 'alternative').map((node) => node.city).filter(Boolean))]
+  const caption = cities.length
+    ? cities.join(' → ')
+    : current
+      ? `${current.city}${next ? ` → ${next.city}` : ''}`
+      : 'Waiting for a live fix'
   return (
     <TripMap
       title="Live map"

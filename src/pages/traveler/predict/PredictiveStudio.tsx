@@ -8,11 +8,12 @@ import { useWeatherTwin } from '@/hooks/useWeatherTwin'
 import { EmergencyPredictPanel } from '@/pages/traveler/predict/EmergencyPredictPanel'
 import { forecastEmergency } from '@/services/predict/emergencyModel'
 import { useAppState } from '@/state/AppState'
+import { AbnormalityReplanPanel } from '@/pages/traveler/twin/AbnormalityReplanPanel'
 
 export function PredictiveStudio() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { trips } = useAppState()
+  const { trips, applyDayReplan } = useAppState()
   const trip = trips.find((item) => item.id === id) ?? trips[0]
   const twin = useWeatherTwin(trip)
   const forecast = useMemo(
@@ -68,6 +69,12 @@ export function PredictiveStudio() {
       ) : (
         <p className="text-sm text-slate-500">Scoring the itinerary DAG against live weather…</p>
       )}
+
+      <AbnormalityReplanPanel
+        trip={trip}
+        snapshot={twin.snapshot}
+        onApply={(proposal) => applyDayReplan(trip.id, proposal)}
+      />
     </div>
   )
 }

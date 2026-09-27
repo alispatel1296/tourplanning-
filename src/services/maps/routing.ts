@@ -19,7 +19,7 @@ const PROFILE: Record<TransportProfile, string> = {
   transit: 'driving',
 }
 
-function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+export function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371000
   const dLat = ((b.lat - a.lat) * Math.PI) / 180
   const dLng = ((b.lng - a.lng) * Math.PI) / 180
@@ -33,9 +33,10 @@ function fallbackLeg(
   origin: { lat: number; lng: number },
   dest: { lat: number; lng: number },
   mode: TransportProfile,
+  straight = false,
 ): RouteLeg {
   const meters = haversineMeters(origin, dest)
-  const speed = mode === 'walking' ? 1.3 : mode === 'cycling' ? 4.5 : 18
+  const speed = straight ? 220 : mode === 'walking' ? 1.3 : mode === 'cycling' ? 4.5 : 18
   return {
     distanceMeters: meters,
     durationSeconds: meters / speed,
@@ -52,7 +53,9 @@ export async function calculateRoute(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
   mode: TransportProfile = 'driving',
+  options?: { straight?: boolean },
 ): Promise<RouteLeg> {
+  if (options?.straight) return fallbackLeg(origin, destination, mode, true)
   const key = `route:${mode}:${origin.lat.toFixed(4)},${origin.lng.toFixed(4)}:${destination.lat.toFixed(4)},${destination.lng.toFixed(4)}`
   const cached = cacheGet<RouteLeg>(key)
   if (cached) return cached

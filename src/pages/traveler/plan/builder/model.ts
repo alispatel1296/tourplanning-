@@ -4,6 +4,27 @@ import type { TripPlan } from '@/types/plan'
 
 export const BUILDER_KEY = 'tf-plan-builder'
 
+const liveHopOptions: Record<string, HopOption[]> = {}
+const liveHopCopy: Record<string, { narrator?: string; question?: string }> = {}
+
+export function setLiveHopOverlay(hopId: string, options: HopOption[], copy?: { narrator?: string; question?: string }) {
+  liveHopOptions[hopId] = options
+  if (copy) liveHopCopy[hopId] = copy
+}
+
+export function hopsWithLive(plan: TripPlan): PlanHop[] {
+  return hopsFor(plan).map((hop) => {
+    const live = liveHopOptions[hop.id]
+    const copy = liveHopCopy[hop.id]
+    return {
+      ...hop,
+      narrator: copy?.narrator ?? hop.narrator,
+      question: copy?.question ?? hop.question,
+      options: live?.length ? live : hop.options,
+    }
+  })
+}
+
 export interface HopPick {
   primaryId: string | null
   alternativeIds: string[]
@@ -16,7 +37,7 @@ export interface BuilderState {
 
 export function emptyBuilder(plan: TripPlan): BuilderState {
   const picks: Record<string, HopPick> = {}
-  hopsFor(plan).forEach((hop) => {
+  hopsWithLive(plan).forEach((hop) => {
     picks[hop.id] = { primaryId: null, alternativeIds: [] }
   })
   return { hopIndex: 0, picks }
@@ -29,7 +50,7 @@ export function loadBuilder(plan: TripPlan): BuilderState {
   try {
     const parsed = JSON.parse(raw) as BuilderState
     return {
-      hopIndex: Math.min(parsed.hopIndex ?? 0, Math.max(0, hopsFor(plan).length - 1)),
+      hopIndex: Math.min(parsed.hopIndex ?? 0, Math.max(0, hopsWithLive(plan).length - 1)),
       picks: { ...fallback.picks, ...parsed.picks },
     }
   } catch {
@@ -55,6 +76,7 @@ export function recommendedOf(hop: PlanHop) {
 }
 
 export function cheapestOf(hop: PlanHop) {
+  if (!hop.options.length) return hop.options[0]
   return hop.options.reduce((best, option) => (option.price < best.price ? option : best), hop.options[0])
 }
 
@@ -68,14 +90,17 @@ export function deltaTone(delta: number) {
 }
 
 export function primarySpend(plan: TripPlan, picks: Record<string, HopPick>) {
-  return hopsFor(plan).reduce((sum, hop) => {
+  return hopsWithLive(plan).reduce((sum, hop) => {
     const option = optionById(hop, picks[hop.id]?.primaryId ?? null)
     return sum + (option?.price ?? 0)
   }, 0)
 }
 
 export function recommendedSpend(plan: TripPlan) {
-  return hopsFor(plan).reduce((sum, hop) => sum + recommendedOf(hop).price, 0)
+  return hopsWithLive(plan).reduce((sum, hop) => {
+    const rec = recommendedOf(hop)
+    return sum + (rec?.price ?? 0)
+  }, 0)
 }
 
 export function hopComplete(pick: HopPick | undefined) {
@@ -83,7 +108,7 @@ export function hopComplete(pick: HopPick | undefined) {
 }
 
 export function applyBuilderToTrip(trip: Trip, plan: TripPlan, picks: Record<string, HopPick>): Trip {
-  const hops = hopsFor(plan)
+  const hops = hopsWithLive(plan)
   const nodes: TripNode[] = hops.map((hop) => {
     const option = optionById(hop, picks[hop.id]?.primaryId ?? null) ?? recommendedOf(hop)
     return {

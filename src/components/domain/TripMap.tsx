@@ -7,7 +7,7 @@ import { MAP_COLORS, markerColor, type MarkerKind } from '@/services/maps/colors
 import { formatDistance, formatDuration } from '@/services/maps/routing'
 import { geocodeLocation } from '@/services/geo/geocode'
 import type { RouteLeg } from '@/services/geo/types'
-import type { LocatedNode } from '@/services/maps/resolve'
+import { isAirOrRail, type LocatedNode } from '@/services/maps/resolve'
 import type { UserFix } from '@/services/location/location'
 
 export interface TripMapProps {
@@ -62,7 +62,6 @@ export function TripMap({
   const layerRef = useRef<L.LayerGroup | null>(null)
   const [query, setQuery] = useState('')
   const [searchPin, setSearchPin] = useState<{ lat: number; lng: number; label: string } | null>(null)
-  const selected = nodes.find((node) => node.id === selectedId)
 
   const summary = useMemo(() => {
     const distance = routes.reduce((sum, leg) => sum + leg.distanceMeters, 0)
@@ -102,7 +101,13 @@ export function TripMap({
     layer.clearLayers()
 
     routes.forEach((leg) => {
-      L.polyline(leg.geometry, { color: MAP_COLORS.route, weight: 5, opacity: 0.9 }).addTo(layer)
+      const longHop = leg.distanceMeters >= 280_000
+      L.polyline(leg.geometry, {
+        color: MAP_COLORS.route,
+        weight: longHop ? 3 : 5,
+        opacity: 0.9,
+        dashArray: longHop ? '10 8' : undefined,
+      }).addTo(layer)
     })
     altRoutes.forEach((leg) => {
       L.polyline(leg.geometry, {
@@ -114,14 +119,18 @@ export function TripMap({
     })
 
     const bounds = L.latLngBounds([])
+    const visits = nodes.filter((node) => node.category === 'stay' || node.category === 'activity' || node.category === 'food' || node.category === 'free')
+    const frame = visits.length ? visits : nodes.filter((node) => !isAirOrRail(node))
+    const frameNodes = frame.length ? frame : nodes
     nodes.forEach((node) => {
       const color = selectedId === node.id ? MAP_COLORS.selected : markerColor(kindFor(node))
       const marker = L.marker([node.lat, node.lng], { icon: pinIcon(color, selectedId === node.id) })
-      marker.bindPopup(`<strong>${node.title}</strong><br/>${node.city} · ${node.time}`)
+      marker.bindTooltip(`${node.city} · ${node.title}`, { direction: 'top', opacity: 0.95 })
+      marker.bindPopup(`<strong>${node.title}</strong><br/>${node.city} · ${node.time}<br/>Day ${node.day}`)
       marker.on('click', () => onSelect?.(node.id))
       marker.addTo(layer)
-      bounds.extend([node.lat, node.lng])
     })
+    frameNodes.forEach((node) => bounds.extend([node.lat, node.lng]))
 
     if (userLocation) {
       const here = L.marker([userLocation.lat, userLocation.lng], { icon: pinIcon(MAP_COLORS.here, true) })
@@ -137,12 +146,15 @@ export function TripMap({
       bounds.extend([searchPin.lat, searchPin.lng])
     }
 
-    if (selected) {
-      map.flyTo([selected.lat, selected.lng], Math.max(map.getZoom(), 12), { duration: 0.6 })
-      return
+    if (bounds.isValid()) {
+      map.invalidateSize()
+      map.fitBounds(bounds.pad(0.22), { maxZoom: 11, animate: false })
+      window.setTimeout(() => {
+        map.invalidateSize()
+        if (bounds.isValid()) map.fitBounds(bounds.pad(0.22), { maxZoom: 11, animate: false })
+      }, 280)
     }
-    if (bounds.isValid()) map.fitBounds(bounds.pad(0.18), { maxZoom: 12 })
-  }, [nodes, routes, altRoutes, selectedId, userLocation, onSelect, selected, searchPin])
+  }, [nodes, routes, altRoutes, selectedId, userLocation, onSelect, searchPin])
 
   return (
     <Card padded={false} className="overflow-hidden">

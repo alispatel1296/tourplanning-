@@ -39,7 +39,7 @@ export function Trips() {
   const [deletedIds, setDeletedIds] = useState<string[]>([])
   
   const saved = params.get('view') === 'saved'
-  const tab = (params.get('tab') as LifeTab) || 'ongoing'
+  const tab = (params.get('tab') as LifeTab) || 'upcoming'
   const navigate = useNavigate()
 
   const trips = allTrips.filter((t) => !deletedIds.includes(t.id))

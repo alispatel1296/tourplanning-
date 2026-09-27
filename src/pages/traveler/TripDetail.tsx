@@ -20,13 +20,14 @@ import { TripMap } from '@/components/domain/TripMap'
 import { useTripGeo } from '@/hooks/useTripGeo'
 import { calculateBudgetHealth } from '@/services/budget/budget'
 import { Comparison, type CompareSide } from '@/pages/traveler/flow/Comparison'
+import { AddStopModal } from '@/pages/traveler/flow/AddStopModal'
 import { AskTripFlow } from '@/pages/traveler/flow/AskTripFlow'
 import { VisitPrecaution } from '@/pages/traveler/flow/VisitPrecaution'
 import type { TripNode } from '@/types'
 
 export function TripDetail() {
   const { id } = useParams()
-  const { trips, deleteTripNode, applyNodePatch, pushToast, markNodeVisited, updateNodeStatus, refreshLivePlan, generating, liveSources } =
+  const { trips, deleteTripNode, applyNodePatch, insertTravelNode, pushToast, markNodeVisited, updateNodeStatus, refreshLivePlan, generating, liveSources } =
     useAppState()
   const trip = trips.find((item) => item.id === id) ?? trips[0]
   const navigate = useNavigate()
@@ -35,7 +36,7 @@ export function TripDetail() {
   const [view, setView] = useState<CanvasView>('flow')
   const [zoom, setZoom] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [_addAfter, setAddAfter] = useState<string | null>(null)
+  const [addAfter, setAddAfter] = useState<string | null>(null)
   const [save] = useState(0)
   const [mobile, setMobile] = useState(false)
   const [compareAlt, setCompareAlt] = useState<NodeAlternative | null>(null)
@@ -77,6 +78,8 @@ export function TripDetail() {
     sessionStorage.setItem(key, '1')
     void refreshLivePlan(trip.id)
   }, [trip, refreshLivePlan])
+
+  const afterNode = nodes.find((node) => node.id === addAfter) ?? null
 
   const planned = trip ? plannedSpend({ ...trip, nodes }, path) - save : 0
   const health = calculateBudgetHealth(trip?.budget ?? 0, planned)
@@ -360,6 +363,17 @@ export function TripDetail() {
         open={Boolean(leaving)}
         onCancel={() => setLeaving(null)}
         onConfirm={() => leaving && confirmVisit(leaving)}
+      />
+
+      <AddStopModal
+        open={Boolean(addAfter)}
+        after={afterNode}
+        onClose={() => setAddAfter(null)}
+        onAdd={(node) => {
+          insertTravelNode(trip.id, addAfter, node)
+          setAddAfter(null)
+          setSelectedId(null)
+        }}
       />
 
       {/* ── Persistent Terracotta Voice Assistant Orb (#C96A4B) ────── */}

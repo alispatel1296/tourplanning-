@@ -46,7 +46,7 @@ export function GenerationStage({ onComplete, liveReady = true }: { onComplete: 
 
   useEffect(() => {
     if (finished.current) return
-    if (elapsed >= 2800 && liveReady) {
+    if ((elapsed >= 2800 && liveReady) || elapsed >= 16000) {
       finished.current = true
       onComplete()
     }

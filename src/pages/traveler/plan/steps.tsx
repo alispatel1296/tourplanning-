@@ -59,6 +59,8 @@ import { RoutePreview } from '@/pages/traveler/plan/RoutePreview'
 import {
   budgetAllocation,
   dateRangeLabel,
+  DEMO_PLAN_BRIEF,
+  DEMO_PLAN_CITIES,
   parseBrief,
   routeLabel,
   styleOptions,
@@ -158,7 +160,7 @@ export function DestinationStep({
     const cityQuery = query.trim().split(/\s+/).length <= 3 && !/\d|under|budget|beach trip/i.test(query)
     onChange({
       brief: query,
-      destinations: next.destinations.length ? next.destinations : plan.destinations,
+      destinations: next.destinations.length ? next.destinations.slice(0, 2) : plan.destinations,
       styles: next.styles.length ? [...new Set([...plan.styles, ...next.styles])] : plan.styles,
       endDate: next.days
         ? format(addDays(parseISO(plan.startDate), next.days - 1), 'yyyy-MM-dd')
@@ -196,10 +198,12 @@ export function DestinationStep({
     // Extract clean city name (before comma) and title-case it
     const cleanName = name.split(',')[0].trim()
     const selected = plan.destinations.includes(cleanName)
+    if (selected) {
+      onChange({ destinations: plan.destinations.filter((c) => c !== cleanName) })
+      return
+    }
     onChange({
-      destinations: selected
-        ? plan.destinations.filter((c) => c !== cleanName)
-        : [...plan.destinations, cleanName],
+      destinations: plan.destinations.length >= 2 ? [plan.destinations[0], cleanName] : [...plan.destinations, cleanName],
     })
   }
 
@@ -214,10 +218,32 @@ export function DestinationStep({
       <StepHeader
         emoji="📍"
         title="Where do you want to go?"
-        subtitle="Search a destination or pick from our curated suggestions below."
+        subtitle="Write two cities. The live planner builds a full day-wise itinerary from Ahmedabad."
       />
 
-      <AIBubble text="Tell me the vibe and I'll find the best cities. E.g. &quot;7 days beach trip under ₹70,000&quot; or just pick cards below." />
+      <div className="mb-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">Two-city circuit</p>
+        <p className="mt-1 text-sm text-slate-700">
+          Type <strong>Jaipur and Udaipur</strong> (or tap the button). Then continue and Generate. The circuit is composed
+          live and saved under <strong>My Trips → Upcoming</strong> — not Ongoing.
+        </p>
+        <button
+          type="button"
+          className="mt-3 rounded-full bg-[var(--color-charcoal)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white"
+          onClick={() => {
+            setQuery(DEMO_PLAN_BRIEF)
+            onChange({
+              brief: DEMO_PLAN_BRIEF,
+              destinations: [...DEMO_PLAN_CITIES],
+              styles: [...new Set([...plan.styles, 'Culture', 'Food', 'Photography'])],
+            })
+          }}
+        >
+          Fill Jaipur + Udaipur
+        </button>
+      </div>
+
+      <AIBubble text='Write exactly: "Jaipur and Udaipur, 6 days from Ahmedabad". Two cities only — the backend returns the full day-by-day output.' />
 
       {/* Search bar */}
       <div className="dest-search-row">
@@ -228,7 +254,7 @@ export function DestinationStep({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && applySearch()}
-            placeholder='Try: "Beach + mountains, 7 days, under ₹80k"'
+            placeholder='Jaipur and Udaipur, 6 days from Ahmedabad'
             className="dest-search-input"
           />
           {searching && <Loader2 className="dest-search-spinner animate-spin" />}
@@ -389,7 +415,11 @@ export function DestinationStep({
                   </div>
                   <div className="dest-card-body">
                     <p className="dest-card-name">{place.name}</p>
-                    <p className="dest-card-tag">{place.tagline}</p>
+                    <p className="dest-card-tag">
+                      {DEMO_PLAN_CITIES.includes(place.name as (typeof DEMO_PLAN_CITIES)[number])
+                        ? 'Featured circuit city'
+                        : place.tagline}
+                    </p>
                   </div>
                 </motion.button>
               )
@@ -1156,7 +1186,7 @@ export function ReviewStep({
             </div>
             <p className="review-action-title">Generate for me</p>
             <p className="review-action-desc">
-              AI builds the full circuit in seconds — trains, stays, and activities, all timed and budgeted.
+              Live search writes the full day-by-day itinerary. The trip is saved under My Trips → Upcoming (not Ongoing).
             </p>
             <Button
 type="button"               variant="secondary"
@@ -1182,7 +1212,7 @@ type="button"               variant="secondary"
               Writing {routeLabel(plan)}…
             </p>
             <p className="text-[13px] text-slate-600 mt-0.5">
-              Simulating trains, stays, and 45-minute buffers
+              SerpApi, flights, rails, and OpenRouter are writing every day and time slot
             </p>
           </div>
         </motion.div>

@@ -13,6 +13,7 @@ import { EmergencyPredictPanel } from '@/pages/traveler/predict/EmergencyPredict
 import { forecastEmergency } from '@/services/predict/emergencyModel'
 import { NugenPipeline } from '@/pages/traveler/twin/NugenPipeline'
 import { WhatIfPanel } from '@/pages/traveler/twin/WhatIfPanel'
+import { AbnormalityReplanPanel } from '@/pages/traveler/twin/AbnormalityReplanPanel'
 import { projectedNodes } from '@/services/twin/weatherModel'
 import { useAppState } from '@/state/AppState'
 
@@ -26,7 +27,7 @@ const TONE: Record<string, string> = {
 export function TwinStudio() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { trips, applyLiveReroute, pushToast } = useAppState()
+  const { trips, applyLiveReroute, applyDayReplan, pushToast } = useAppState()
   const trip = trips.find((item) => item.id === id) ?? trips[0]
   const twin = useWeatherTwin(trip)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -73,6 +74,12 @@ export function TwinStudio() {
       {twin.error ? <p className="text-sm text-amber-800">{twin.error}</p> : null}
 
       {snapshot ? <EmergencyPredictPanel forecast={forecastEmergency(trip, snapshot)} /> : null}
+
+      <AbnormalityReplanPanel
+        trip={trip}
+        snapshot={snapshot}
+        onApply={(proposal) => applyDayReplan(trip.id, proposal)}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard

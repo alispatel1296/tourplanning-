@@ -41,8 +41,9 @@ function buildTravelTime(nodes: TripNode[]): string {
 }
 
 export function ResultView({ onRegenerate }: { onRegenerate: () => void }) {
-  const trip = usePrimaryTrip()
-  const { plan, pushToast, insertTravelNode, liveSources } = useAppState()
+  const primary = usePrimaryTrip()
+  const { plan, trips, activeTripId, pushToast, insertTravelNode, liveSources } = useAppState()
+  const trip = trips.find((item) => item.id === activeTripId) ?? primary
   const navigate = useNavigate()
   const [openDays, setOpenDays] = useState<number[]>([])
   const composed = useMemo(() => {
@@ -84,7 +85,11 @@ export function ResultView({ onRegenerate }: { onRegenerate: () => void }) {
         <Badge tone="ai">OpenRouter sequenced</Badge>
         <Badge tone="success">Optimized</Badge>
       </div>
-      <h1 className="page-title">Your optimized journey is ready.</h1>
+      <h1 className="page-title">{trip.title} is ready.</h1>
+      <p className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        This circuit is saved in <strong>My Trips → Upcoming</strong> (status Ready). Ongoing is only for trips already on the
+        road. Open the day-wise flow anytime — it is not only in the backend.
+      </p>
       <p className="mt-2 text-sm text-slate-600">
         {duration.nights} nights • {duration.days} days • {trip.adults} travelers · {dateRangeLabel(plan)} · {trip.route}
         {sources.length ? ` · ${sources.join(' · ')}` : ''}
@@ -99,7 +104,12 @@ export function ResultView({ onRegenerate }: { onRegenerate: () => void }) {
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Budget" value={formatINR(trip.budget)} hint={`${formatINR(remaining)} still free`} tone="success" />
         <MetricCard label="Feasibility" value={`${trip.feasibility}%`} hint={livePlan ? 'Live OpenRouter score' : 'After conflict resolution'} tone="ai" />
-        <MetricCard label="Travel time" value="11h 20m" hint="Rail + two flights + cabs" tone="info" />
+        <MetricCard
+          label="Travel time"
+          value={buildTravelTime(trip.nodes)}
+          hint={trip.transport.join(' + ') || 'Mixed legs'}
+          tone="info"
+        />
         <MetricCard label="Safety buffer" value="45 min" hint={`${formatINR(5000)} cash buffer`} tone="warning" />
       </div>
 
@@ -153,6 +163,9 @@ type="button"                       key={entity!.id}
         <Button type="button" variant="secondary" onClick={() => navigate(`/traveler/trips/${trip.id}`)}>
           Open trip flow
         </Button>
+        <Button type="button" variant="secondary" onClick={() => navigate('/traveler/trips?tab=upcoming')}>
+          Show in My Trips
+        </Button>
         <Button type="button" variant="secondary" onClick={() => setFlow(true)}>
           Day list
         </Button>
@@ -166,7 +179,7 @@ type="button"                       key={entity!.id}
 type="button"           variant={saved ? 'outline' : 'secondary'}
           onClick={() => {
             setSaved(true)
-            pushToast({ title: 'Trip saved', body: `${trip.title} is in My Trips.` })
+            pushToast({ title: 'Trip saved', body: `${trip.title} is in My Trips → Upcoming.` })
           }}
         >
           {saved ? 'Saved' : 'Save Trip'}
