@@ -10,7 +10,7 @@ function p(id: string, name: string, state: string, tagline: string, image: stri
 
 export const places: Place[] = [
   p('ahmedabad', 'Ahmedabad', 'Gujarat', 'Home city', 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=70', 92, 168),
-  p('mumbai', 'Mumbai', 'Maharashtra', 'Coastal nights', 'https://images.unsplash.com/photo-1529253355930-ddbe423a2d4c?auto=format&fit=crop&w=800&q=70', 168, 132),
+  p('mumbai', 'Mumbai', 'Maharashtra', 'Coastal nights', 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=70', 168, 132),
   p('goa', 'Goa', 'Goa', 'Beaches & spice', 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=70', 196, 214),
   p('jaipur', 'Jaipur', 'Rajasthan', 'Palaces & light', 'https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=800&q=70', 148, 86),
   p('kerala', 'Kerala', 'Kerala', 'Backwaters', 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=70', 248, 236),
@@ -24,7 +24,10 @@ export const places: Place[] = [
   p('varanasi', 'Varanasi', 'Uttar Pradesh', 'Ghats at dawn', 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=800&q=70', 230, 110),
   p('rishikesh', 'Rishikesh', 'Uttarakhand', 'Ganga & yoga', 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=70', 210, 48),
   p('amritsar', 'Amritsar', 'Punjab', 'Golden Temple', 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=800&q=70', 160, 36),
-  p('srinagar', 'Srinagar', 'Kashmir', 'Dal Lake', 'https://images.unsplash.com/photo-1595815771614-ade9d6520f2b?auto=format&fit=crop&w=800&q=70', 190, 18),
+  p('srinagar', 'Srinagar', 'Kashmir', 'Dal Lake', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=70', 190, 18),
+  p('kashmir', 'Kashmir', 'Kashmir', 'Valley lakes', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=70', 192, 16),
+  p('gulmarg', 'Gulmarg', 'Kashmir', 'Meadow gondola', 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=70', 184, 14),
+  p('pahalgam', 'Pahalgam', 'Kashmir', 'Lidder valley', 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=70', 198, 20),
   p('leh', 'Leh', 'Ladakh', 'High desert', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=70', 240, 12),
   p('dharamshala', 'Dharamshala', 'Himachal', 'Hill monastery', 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=70', 220, 38),
   p('chandigarh', 'Chandigarh', 'Punjab', 'Garden city', 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=800&q=70', 188, 50),

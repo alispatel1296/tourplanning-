@@ -1,5 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import './steps.css'
+import { CoverImage } from '@/components/ui/CoverImage'
+import { placeCover } from '@/lib/covers'
 import { searchDestinations } from '@/services/travel/TravelDataService'
 import type { TravelEntity } from '@/services/travel/types'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -375,8 +377,8 @@ export function DestinationStep({
                   className={cn('dest-card', selected && 'dest-card--selected')}
                 >
                   <div className="dest-card-img-wrap">
-                    <img
-                      src={place.image}
+                    <CoverImage
+                      src={placeCover(place.name, place.image)}
                       alt={place.name}
                       className="dest-card-img"
                     />

@@ -9,6 +9,6 @@
   "baseModel": "qwen-v2p5-0p5b-instruct",
   "alignmentStatus": "FAILED",
   "benchmarkId": "benchmark_01m3ggypaardgxd8",
-  "updatedAt": "2026-09-27T05:30:51.140Z",
+  "updatedAt": "2026-09-27T05:39:09.921Z",
   "alignedModelId": "alignment_01m3ggwq01bh0cm9"
 }
