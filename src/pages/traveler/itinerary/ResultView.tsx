@@ -296,7 +296,11 @@ type="button"           variant={saved ? 'outline' : 'secondary'}
       </div>
 
       <Drawer open={flow} onClose={() => setFlow(false)} title="Trip flow">
-        <MapPanel title={trip.title} caption={trip.route} />
+        <MapPanel
+          title={trip.title}
+          caption={trip.route}
+          nodes={trip.nodes.filter((node) => node.status !== 'alternative')}
+        />
         <div className="mt-4 space-y-3">
           {days.map((day) => (
             <div key={day.day} className="rounded-xl border border-line px-3 py-3">

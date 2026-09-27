@@ -4,10 +4,11 @@ import 'leaflet/dist/leaflet.css'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { MAP_COLORS, markerColor, type MarkerKind } from '@/services/maps/colors'
-import { formatDistance, formatDuration } from '@/services/maps/routing'
+import { formatDistance, formatDuration, inIndia } from '@/services/maps/routing'
+import { citySeed } from '@/services/geo/seeds'
 import { geocodeLocation } from '@/services/geo/geocode'
 import type { RouteLeg } from '@/services/geo/types'
-import { isAirOrRail, type LocatedNode } from '@/services/maps/resolve'
+import type { LocatedNode } from '@/services/maps/resolve'
 import type { UserFix } from '@/services/location/location'
 
 export interface TripMapProps {
@@ -78,7 +79,7 @@ export function TripMap({
       maxZoom: 18,
     }).addTo(map)
     layerRef.current = L.layerGroup().addTo(map)
-    map.setView([19.08, 72.88], 5)
+    map.setView([23.5, 78.5], 5)
     mapRef.current = map
     const resize = window.setTimeout(() => map.invalidateSize(), 120)
     const observer = typeof ResizeObserver === 'undefined'
@@ -119,10 +120,27 @@ export function TripMap({
     })
 
     const bounds = L.latLngBounds([])
-    const visits = nodes.filter((node) => node.category === 'stay' || node.category === 'activity' || node.category === 'food' || node.category === 'free')
-    const frame = visits.length ? visits : nodes.filter((node) => !isAirOrRail(node))
-    const frameNodes = frame.length ? frame : nodes
-    nodes.forEach((node) => {
+    const indiaNodes = nodes.filter((node) => inIndia(node))
+    const seenCities = new Set<string>()
+    const cityAnchors: Array<{ lat: number; lng: number; city: string }> = []
+    for (const node of indiaNodes) {
+      const pin = citySeed(node.city) ?? citySeed(node.title)
+      if (!pin) continue
+      const key = pin.city.toLowerCase()
+      if (seenCities.has(key)) continue
+      seenCities.add(key)
+      cityAnchors.push(pin)
+    }
+    const frameNodes = cityAnchors.length ? cityAnchors : indiaNodes
+    const span = cityAnchors.length >= 2
+      ? Math.max(
+          ...cityAnchors.map((a) =>
+            Math.max(...cityAnchors.map((b) => Math.hypot(a.lat - b.lat, a.lng - b.lng))),
+          ),
+        )
+      : 0
+    const maxZoom = span > 8 ? 6 : span > 4 ? 7 : span > 1.2 ? 9 : 12
+    indiaNodes.forEach((node) => {
       const color = selectedId === node.id ? MAP_COLORS.selected : markerColor(kindFor(node))
       const marker = L.marker([node.lat, node.lng], { icon: pinIcon(color, selectedId === node.id) })
       marker.bindTooltip(`${node.city} · ${node.title}`, { direction: 'top', opacity: 0.95 })
@@ -132,7 +150,7 @@ export function TripMap({
     })
     frameNodes.forEach((node) => bounds.extend([node.lat, node.lng]))
 
-    if (userLocation) {
+    if (userLocation && inIndia(userLocation)) {
       const here = L.marker([userLocation.lat, userLocation.lng], { icon: pinIcon(MAP_COLORS.here, true) })
       here.bindPopup('You are here')
       here.addTo(layer)
@@ -148,10 +166,10 @@ export function TripMap({
 
     if (bounds.isValid()) {
       map.invalidateSize()
-      map.fitBounds(bounds.pad(0.22), { maxZoom: 11, animate: false })
+      map.fitBounds(bounds.pad(0.14), { maxZoom, animate: false })
       window.setTimeout(() => {
         map.invalidateSize()
-        if (bounds.isValid()) map.fitBounds(bounds.pad(0.22), { maxZoom: 11, animate: false })
+        if (bounds.isValid()) map.fitBounds(bounds.pad(0.14), { maxZoom, animate: false })
       }, 280)
     }
   }, [nodes, routes, altRoutes, selectedId, userLocation, onSelect, searchPin])

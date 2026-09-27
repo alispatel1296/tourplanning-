@@ -19,6 +19,10 @@ const PROFILE: Record<TransportProfile, string> = {
   transit: 'driving',
 }
 
+export function inIndia(point: { lat: number; lng: number }) {
+  return point.lat >= 6.5 && point.lat <= 35.6 && point.lng >= 68.5 && point.lng <= 97.4
+}
+
 export function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371000
   const dLat = ((b.lat - a.lat) * Math.PI) / 180

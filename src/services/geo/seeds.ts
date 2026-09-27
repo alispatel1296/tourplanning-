@@ -48,6 +48,7 @@ export const CITY_SEEDS: Record<string, GeoPoint> = {
   varanasi: pin(25.3176, 82.9739, 'Varanasi', 'Uttar Pradesh'),
   srinagar: pin(34.0837, 74.7973, 'Srinagar', 'Jammu and Kashmir'),
   kashmir: pin(34.0837, 74.7973, 'Srinagar', 'Jammu and Kashmir'),
+  'kashmir valley': pin(34.0837, 74.7973, 'Srinagar', 'Jammu and Kashmir'),
   gulmarg: pin(34.0484, 74.3805, 'Gulmarg', 'Jammu and Kashmir'),
   pahalgam: pin(34.0161, 75.3152, 'Pahalgam', 'Jammu and Kashmir'),
   lidder: pin(34.02, 75.33, 'Pahalgam', 'Jammu and Kashmir', 'Lidder valley, Pahalgam'),
@@ -82,6 +83,7 @@ export const CITY_SEEDS: Record<string, GeoPoint> = {
   'mount abu': pin(24.5926, 72.7156, 'Mount Abu', 'Rajasthan'),
   bhuj: pin(23.242, 69.6669, 'Bhuj', 'Gujarat'),
   andaman: pin(11.6234, 92.7265, 'Port Blair', 'Andaman'),
+  'port blair': pin(11.6234, 92.7265, 'Port Blair', 'Andaman'),
 }
 
 export const PLACE_SEEDS: Record<string, GeoPoint> = {
@@ -101,6 +103,27 @@ export const PLACE_SEEDS: Record<string, GeoPoint> = {
   trishna: pin(18.932, 72.833, 'Mumbai', 'Maharashtra', 'Trishna, Fort, Mumbai'),
   'marine drive': pin(18.943, 72.823, 'Mumbai', 'Maharashtra', 'Marine Drive, Mumbai'),
   'gateway of india': pin(18.922, 72.8347, 'Mumbai', 'Maharashtra', 'Gateway of India'),
+  'elephanta': pin(18.9633, 72.9315, 'Mumbai', 'Maharashtra', 'Elephanta Caves'),
+  'elephanta caves': pin(18.9633, 72.9315, 'Mumbai', 'Maharashtra', 'Elephanta Caves'),
+  'juhu': pin(19.0968, 72.8265, 'Mumbai', 'Maharashtra', 'Juhu Beach, Mumbai'),
+  'juhu beach': pin(19.0968, 72.8265, 'Mumbai', 'Maharashtra', 'Juhu Beach, Mumbai'),
+  'chhatrapati shivaji': pin(18.9398, 72.8355, 'Mumbai', 'Maharashtra', 'Chhatrapati Shivaji Terminus'),
+  cst: pin(18.9398, 72.8355, 'Mumbai', 'Maharashtra', 'Chhatrapati Shivaji Terminus'),
+  'sea link': pin(19.029, 72.815, 'Mumbai', 'Maharashtra', 'Bandra-Worli Sea Link'),
+  'bandra worli': pin(19.029, 72.815, 'Mumbai', 'Maharashtra', 'Bandra-Worli Sea Link'),
+  powai: pin(19.1197, 72.9051, 'Mumbai', 'Maharashtra', 'Powai Lake, Mumbai'),
+  'powai lake': pin(19.1197, 72.9051, 'Mumbai', 'Maharashtra', 'Powai Lake, Mumbai'),
+  'lake view cafe': pin(19.1197, 72.9051, 'Mumbai', 'Maharashtra', 'Lake View Cafe, Powai'),
+  'lemon tree': pin(19.0988, 72.8746, 'Mumbai', 'Maharashtra', 'Lemon Tree Premier, Mumbai Airport'),
+  'peshwa pavilion': pin(18.9219, 72.833, 'Mumbai', 'Maharashtra', 'Peshwa Pavilion, Taj Mahal Palace'),
+  hornby: pin(18.932, 72.8336, 'Mumbai', 'Maharashtra', "Hornby's Pavilion, Mumbai"),
+  'hornby pavilion': pin(18.932, 72.8336, 'Mumbai', 'Maharashtra', "Hornby's Pavilion, Mumbai"),
+  'ram ashraya': pin(19.027, 72.855, 'Mumbai', 'Maharashtra', 'Ram Ashraya, Matunga'),
+  'pali bhavan': pin(19.062, 72.829, 'Mumbai', 'Maharashtra', 'Pali Bhavan, Bandra'),
+  sabarmati: pin(23.0605, 72.5808, 'Ahmedabad', 'Gujarat', 'Sabarmati Ashram, Ahmedabad'),
+  'lal darwaza': pin(23.0228, 72.5811, 'Ahmedabad', 'Gujarat', 'Lal Darwaza, Ahmedabad'),
+  manekchowk: pin(23.022, 72.588, 'Ahmedabad', 'Gujarat', 'Manek Chowk, Ahmedabad'),
+  'manek chowk': pin(23.022, 72.588, 'Ahmedabad', 'Gujarat', 'Manek Chowk, Ahmedabad'),
   'fort aguada': pin(15.4924, 73.7732, 'Goa', 'Goa', 'Fort Aguada'),
   chapora: pin(15.603, 73.736, 'Goa', 'Goa', 'Chapora Fort'),
   fontainhas: pin(15.498, 73.83, 'Panaji', 'Goa', 'Fontainhas, Panaji'),
@@ -117,7 +140,7 @@ function tokens(value: string) {
   return value
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter((part) => part.length > 2)
+    .filter((part) => part.length > 1)
 }
 
 export function seedLookup(query: string): GeoPoint | null {
@@ -127,13 +150,22 @@ export function seedLookup(query: string): GeoPoint | null {
   const words = new Set(tokens(key))
   const ranked = Object.entries(ALL_SEEDS).sort((a, b) => b[0].length - a[0].length)
   for (const [name, point] of ranked) {
-    const nameWords = tokens(name)
-    if (nameWords.length && nameWords.every((word) => words.has(word))) return point
-    if (name.length >= 5 && key.includes(name)) return point
+    const nameWords = tokens(name).filter((word) => word.length > 2)
+    if (!nameWords.length) continue
+    if (nameWords.every((word) => words.has(word))) return point
   }
   return null
 }
 
 export function citySeed(city: string): GeoPoint | null {
-  return CITY_SEEDS[city.trim().toLowerCase()] ?? seedLookup(city)
+  const key = city.trim().toLowerCase()
+  if (!key) return null
+  if (CITY_SEEDS[key]) return CITY_SEEDS[key]
+  const words = new Set(tokens(key))
+  const ranked = Object.entries(CITY_SEEDS).sort((a, b) => b[0].length - a[0].length)
+  for (const [name, point] of ranked) {
+    const nameWords = tokens(name).filter((word) => word.length > 2)
+    if (nameWords.length && nameWords.every((word) => words.has(word))) return point
+  }
+  return null
 }

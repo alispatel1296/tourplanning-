@@ -1,6 +1,7 @@
 import { cacheGet, cacheSet, TTL } from '@/services/cache'
 import { getJson } from '@/services/http'
-import { seedLookup } from '@/services/geo/seeds'
+import { citySeed, seedLookup } from '@/services/geo/seeds'
+import { haversineMeters, inIndia } from '@/services/maps/routing'
 import type { GeoPoint } from '@/services/geo/types'
 
 interface NominatimHit {
@@ -40,10 +41,17 @@ export async function geocodeLocation(query: string): Promise<GeoPoint | null> {
   const cached = cacheGet<GeoPoint>(cacheKey)
   if (cached) return cached
 
-  const seed = seedLookup(q)
+  const cityHint = q.split(',').map((part) => part.trim()).find((part) => citySeed(part))
+  const cityPin = cityHint ? citySeed(cityHint) : citySeed(q)
+  const seed = seedLookup(q) ?? cityPin
+  const simple = q.split(/[,\s]+/).filter(Boolean).length <= 2
+  if (seed && simple) {
+    cacheSet(cacheKey, { ...seed, source: 'seed' }, TTL.geocode)
+    return { ...seed, source: 'seed' }
+  }
   try {
     const { data } = await getJson<NominatimHit[]>(
-      `${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=1`,
+      `${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=1&countrycodes=in`,
       { headers: { 'Accept-Language': 'en' } },
     )
     const hit = data[0]
@@ -56,6 +64,11 @@ export async function geocodeLocation(query: string): Promise<GeoPoint | null> {
       return null
     }
     const point = fromHit(hit)
+    if (!inIndia(point) || (cityPin && haversineMeters(point, cityPin) > 90_000)) {
+      const fallback = seed ?? cityPin
+      cacheSet(cacheKey, { ...fallback, source: 'seed' }, TTL.geocode)
+      return { ...fallback, source: 'seed' }
+    }
     cacheSet(cacheKey, point, TTL.geocode)
     return point
   } catch {

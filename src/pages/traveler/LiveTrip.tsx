@@ -4,7 +4,7 @@ import { CloudRain, CloudSun, TriangleAlert, Navigation, ArrowRight, MapPin, Che
 import { getCurrentWeather } from '@/services/weather/weather'
 import { detectWeatherSignal, runDisruptionPipeline, simulationSignal, type DisruptionProposal } from '@/services/disruption/disruption'
 import { haversineKm, requestOnce, type UserFix } from '@/services/location/location'
-import { seedLookup } from '@/services/geo/seeds'
+import { citySeed, seedLookup } from '@/services/geo/seeds'
 import { formatDistance } from '@/services/maps/routing'
 import type { WeatherNow } from '@/services/geo/types'
 import { Button } from '@/components/ui/Button'
@@ -61,7 +61,7 @@ export function LiveTrip() {
   useEffect(() => {
     if (!trip) return
     const city = current?.city ?? 'Goa'
-    const pin = seedLookup(city) ?? seedLookup('Goa')
+    const pin = citySeed(city) ?? seedLookup(city) ?? citySeed('Goa')
     if (!pin) return
     const list = trip.nodes
     void getCurrentWeather(pin.lat, pin.lng)
@@ -95,7 +95,7 @@ export function LiveTrip() {
     return nodes.slice(index + 1).find((node) => node.status !== 'visited' && node.status !== 'disrupted') ?? null
   }, [nodes, current])
 
-  const nextPin = next ? seedLookup(next.city) ?? seedLookup(next.title) : null
+  const nextPin = next ? citySeed(next.city) ?? seedLookup(next.title) ?? seedLookup(next.city) : null
   const nextKm = fix && nextPin ? haversineKm(fix, nextPin) : null
 
   if (!trip || !nodes.length) {

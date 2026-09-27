@@ -129,7 +129,7 @@ export function WeatherTwinMap({
       bounds.extend([node.lat, node.lng])
     })
 
-    if (bounds.isValid()) map.fitBounds(bounds.pad(0.22), { maxZoom: 11 })
+    if (bounds.isValid()) map.fitBounds(bounds.pad(0.28), { maxZoom: cities.length > 1 ? 6 : 11 })
   }, [nodes, entities, cities, links, selectedId, onSelect])
 
   return (

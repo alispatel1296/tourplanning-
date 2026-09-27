@@ -8,7 +8,7 @@ import {
   type WeatherWhatIf,
 } from '@/services/twin/weatherModel'
 import { getWeatherBundle } from '@/services/weather/weather'
-import { seedLookup } from '@/services/geo/seeds'
+import { citySeed, seedLookup } from '@/services/geo/seeds'
 import type { Trip } from '@/types'
 
 export function useWeatherTwin(trip: Trip | undefined) {
@@ -68,7 +68,7 @@ export function useWeatherTwin(trip: Trip | undefined) {
 
   useEffect(() => {
     let cancelled = false
-    const pin = seedLookup(focusCity) ?? seedLookup('Goa')
+    const pin = citySeed(focusCity) ?? seedLookup(focusCity) ?? citySeed('Goa')
     if (!pin) return
     getWeatherBundle(pin.lat, pin.lng)
       .then((bundle) => {
