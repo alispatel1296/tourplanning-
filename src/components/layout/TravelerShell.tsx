@@ -38,8 +38,8 @@ const mobileNav = [
   { to: '/traveler', label: 'Home', icon: LayoutDashboard, end: true },
   { to: '/traveler/trips', label: 'Trips', icon: Compass },
   { to: '/traveler/plan', label: 'Plan', icon: Sparkles },
-  { to: '/traveler/map', label: 'Map', icon: MapIcon },
   { to: '/traveler/live/trip-amd-goa', label: 'Live', icon: Radio },
+  { to: '/traveler/predict/trip-amd-goa', label: 'Predict', icon: ShieldAlert },
 ]
 
 export function TravelerShell() {
@@ -166,7 +166,7 @@ export function TravelerShell() {
 
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-white/95 px-1 py-3 backdrop-blur lg:hidden">
         {mobileNav.map((item) => {
-          const to = item.label === 'Live' ? liveTo : item.to
+          const to = item.label === 'Live' ? liveTo : item.label === 'Predict' ? predictTo : item.to
           return (
             <NavLink
               key={item.label}

@@ -60,6 +60,9 @@ export function TwinStudio() {
             <Button type="button" variant="secondary" onClick={twin.refresh}>
               Refresh live feeds
             </Button>
+            <Button type="button" variant="secondary" onClick={() => navigate(`/traveler/predict/${trip.id}`)}>
+              Emergency forecast
+            </Button>
             <Button type="button" variant="secondary" onClick={() => navigate(`/traveler/live/${trip.id}`)}>
               Open live companion
             </Button>

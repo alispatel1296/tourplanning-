@@ -9,6 +9,9 @@ import { formatDistance } from '@/services/maps/routing'
 import type { WeatherNow } from '@/services/geo/types'
 import { Button } from '@/components/ui/Button'
 import { LiveMap } from '@/pages/traveler/live/LiveMap'
+import { EmergencyPredictPanel } from '@/pages/traveler/predict/EmergencyPredictPanel'
+import { forecastEmergency } from '@/services/predict/emergencyModel'
+import { useWeatherTwin } from '@/hooks/useWeatherTwin'
 import { useAppState } from '@/state/AppState'
 import { INDOOR_ALT_ID, liveDay } from '@/pages/traveler/live/model'
 
@@ -24,6 +27,11 @@ export function LiveTrip() {
   } = useAppState()
   const trip = trips.find((item) => item.id === id) ?? trips[0]
   const navigate = useNavigate()
+  const twin = useWeatherTwin(trip)
+  const forecast = useMemo(
+    () => (trip && twin.snapshot ? forecastEmergency(trip, twin.snapshot) : null),
+    [trip, twin.snapshot],
+  )
   
   const [disruption, setDisruption] = useState<'idle' | 'open' | 'accepted'>('idle')
   const [weather, setWeather] = useState<WeatherNow | null>(null)
@@ -57,9 +65,16 @@ export function LiveTrip() {
     void getCurrentWeather(pin.lat, pin.lng)
       .then(async (now) => {
         setWeather(now)
-        const outdoor = list.find(
-          (node) => node.category === 'activity' && /beach|baga|water/i.test(`${node.title} ${node.notes}`),
-        )
+        const outdoor =
+          list.find((node) => node.id === forecast?.triggerNodeId) ??
+          list.find(
+            (node) =>
+              node.category === 'activity' &&
+              /beach|baga|water|trek|gondola|dal|shikara|raft|garden|fort|viewpoint|outdoor/i.test(
+                `${node.title} ${node.notes}`,
+              ),
+          ) ??
+          list.find((node) => node.category === 'activity')
         const signal = await detectWeatherSignal(pin.lat, pin.lng, outdoor)
         if (signal) {
           const proposal = await runDisruptionPipeline(signal, list)
@@ -69,7 +84,7 @@ export function LiveTrip() {
         }
       })
       .catch(() => setWeather(null))
-  }, [trip?.id, current?.city])
+  }, [trip?.id, current?.city, forecast?.triggerNodeId])
 
   const next = useMemo(() => {
     if (!current)
@@ -105,7 +120,10 @@ export function LiveTrip() {
   const keep = () => {
     keepLivePlan(trip.id)
     setDisruption('idle')
-    pushToast({ title: 'Original plan kept', body: 'Baga water sports stays on the live path.' })
+    pushToast({
+      title: 'Original plan kept',
+      body: `${forecast?.triggerTitle ?? 'The outdoor hop'} stays on the live path.`,
+    })
   }
 
   return (
@@ -124,16 +142,29 @@ export function LiveTrip() {
         </h1>
       </div>
 
+      {forecast ? (
+        <div className="text-left">
+          <EmergencyPredictPanel forecast={forecast} compact />
+          <div className="mt-3 flex justify-end">
+            <Button type="button" variant="secondary" onClick={() => navigate(`/traveler/predict/${trip.id}`)}>
+              Full emergency model
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Disruption Alert / Recovery Flow */}
-      {weatherAlert && disruption === 'idle' ? (
+      {(weatherAlert || (forecast && (forecast.level === 'warning' || forecast.level === 'critical'))) && disruption === 'idle' ? (
         <div className="bg-[var(--color-charcoal)] text-white rounded-[2rem] p-8 md:p-10 shadow-2xl relative overflow-hidden">
           <div className="absolute inset-0 bg-red-900/20" />
           <div className="relative z-10 text-center space-y-6">
             <TriangleAlert className="h-10 w-10 text-red-400 mx-auto" />
-            <h2 className="font-display text-3xl font-medium">WEATHER CHANGE</h2>
+            <h2 className="font-display text-3xl font-medium">PREDICTED EMERGENCY</h2>
             <p className="text-lg text-white/90">
-              {weatherAlert.signal.title}.<br />
-              Your {current?.title ?? 'next visit'} may be affected.
+              {weatherAlert?.signal.title ?? forecast?.headline}<br />
+              {forecast
+                ? `${forecast.triggerTitle} in ${forecast.triggerCity} is the stressed hop.`
+                : `Your ${current?.title ?? 'next visit'} may be affected.`}
             </p>
             <div className="pt-4 border-t border-white/20">
               <p className="text-sm tracking-[0.1em] text-[var(--color-muted-gold)] uppercase mb-6">VoyageOS found a better sequence.</p>
@@ -150,7 +181,9 @@ export function LiveTrip() {
           <div className="text-center space-y-8">
             <div>
               <h2 className="font-display text-3xl font-medium mb-2">YOUR JOURNEY CHANGED</h2>
-              <p className="text-lg text-red-400">Weather disruption near Baga Beach.</p>
+              <p className="text-lg text-red-400">
+                Weather disruption near {forecast?.triggerCity ?? current?.city ?? 'the next hop'}.
+              </p>
             </div>
             
             <div className="grid sm:grid-cols-2 gap-4 text-left">

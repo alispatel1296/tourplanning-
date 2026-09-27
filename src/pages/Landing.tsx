@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   AudioLines,
   BadgeIndianRupee,
+  BrainCircuit,
   Building2,
   LifeBuoy,
   Menu,
@@ -30,7 +31,40 @@ const howSteps = [
   { id: '02', title: 'AI builds your journey', body: 'A full node graph — trains, stays, meals, and activities — not a static PDF.' },
   { id: '03', title: 'Digital Twin checks feasibility', body: 'Inventory, weather, and punctuality are simulated before anything is held.' },
   { id: '04', title: 'Book & travel', body: 'Confirmed nodes move into the live companion for both traveler and operator.' },
-  { id: '05', title: 'AI adapts when reality changes', body: 'Disruptions reroute the trip, keep the budget honest, and notify the field desk.' },
+  { id: '05', title: 'Predict the emergency, then adapt', body: 'Six models score the next shock before it hits the live companion — then a yellow path is staged, bookings stay put.' },
+]
+
+const uspFrameworks = [
+  {
+    name: 'Hazard nowcast',
+    family: 'Open-Meteo short-range meteorology',
+    body: 'Rain, wind, storm hours, and a flood index on the cell the traveler is in — not a national headline.',
+  },
+  {
+    name: 'Outdoor hazard model',
+    family: 'Cox-style risk on activity nodes',
+    body: 'Beaches, treks, and open-air slots get a survival-style shock given rain, heat, and flood.',
+  },
+  {
+    name: 'Itinerary DAG cascade',
+    family: 'Delay propagation on the trip graph',
+    body: 'Each hop inherits delay from the last transport and outdoor node. One red beach can slip the dinner and the flight.',
+  },
+  {
+    name: 'Bayesian social update',
+    family: 'SerpApi news / search likelihood',
+    body: 'Public flood, storm, and cancel language updates the weather prior so a quiet cell stays quiet.',
+  },
+  {
+    name: 'Counterfactual what-if',
+    family: 'do-intervention on rainfall / flood',
+    body: 'Levers change the twin only. Inventory does not move until the traveler accepts the reroute.',
+  },
+  {
+    name: 'Confidence band',
+    family: 'Uncertainty around the emergency score',
+    body: 'Wider bands when social feeds are thin or the weather cell is still loading — the desk sees the doubt.',
+  },
 ]
 
 const intelligence = [
@@ -50,6 +84,16 @@ const intelligence = [
     preview: (
       <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[11px] font-medium text-rose-700">
         Novotel waitlisted · high risk
+      </div>
+    ),
+  },
+  {
+    title: 'Predictive emergency',
+    body: 'The USP: nowcast, cascade, and social Bayes score the next shock before the live companion feels it.',
+    preview: (
+      <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2">
+        <p className="text-[11px] font-semibold text-rose-800">P(emergency) 41% · 90 min lead</p>
+        <p className="mt-1 text-[11px] text-slate-500">Stage indoor path · bookings unchanged</p>
       </div>
     ),
   },
@@ -92,7 +136,8 @@ const intelligence = [
 ]
 
 const smartFeatures = [
-  { icon: ShieldAlert, title: 'Auto Conflict Detection', body: 'Inventory, weather, and timing clashes surface before the guest feels them.' },
+  { icon: ShieldAlert, title: 'Predictive emergency', body: 'Six named frameworks score the next shock on the live itinerary graph — the TripFlow USP.' },
+  { icon: BrainCircuit, title: 'Auto Conflict Detection', body: 'Inventory, weather, and timing clashes surface before the guest feels them.' },
   { icon: RefreshCw, title: 'Dynamic Rerouting', body: 'The live graph rewrites itself when a node fails, without a new brochure.' },
   { icon: BadgeIndianRupee, title: 'Budget Health', body: 'Every swap shows the rupee impact against the original ceiling.' },
   { icon: Users, title: 'Group Sync', body: 'FIT and group movements stay on one departure file with a named lead.' },
@@ -127,6 +172,9 @@ export function Landing() {
             <a href="#how" className="hover:text-white transition-colors">
               How it works
             </a>
+            <a href="#usp" className="hover:text-white transition-colors">
+              Predictive USP
+            </a>
             <a href="#intelligence" className="hover:text-white transition-colors">
               Intelligence
             </a>
@@ -154,6 +202,9 @@ export function Landing() {
             <div className="flex flex-col gap-4 text-sm text-white">
               <a href="#how" onClick={() => setMenu(false)}>
                 How it works
+              </a>
+              <a href="#usp" onClick={() => setMenu(false)}>
+                Predictive USP
               </a>
               <a href="#features" onClick={() => setMenu(false)}>
                 Features
@@ -186,7 +237,7 @@ export function Landing() {
             </h1>
             
             <p className="mt-4 text-lg md:text-[19px] text-white/90 font-sans font-medium tracking-wide leading-relaxed max-w-md">
-              Five capabilities keep travel feasible. Language is not one of them.
+              Predictive emergency modelling is the USP. The itinerary scores the next shock before the day breaks.
             </p>
             
             <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-center gap-8">
@@ -281,6 +332,41 @@ export function Landing() {
                 </li>
               ))}
             </ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="usp" className="scroll-mt-20 border-b border-line bg-[var(--color-charcoal)] py-16 text-white">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-muted-gold)]">USP · Predictive emergency</p>
+              <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
+                Score the shock before the day breaks.
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-white/75">
+                Other planners react after a swell or a delay lands. TripFlow runs six frameworks on the live itinerary
+                graph — nowcast, outdoor hazard, DAG cascade, social Bayes, counterfactual what-if, and a confidence
+                band — then stages a yellow path. Booked inventory does not move until the traveler accepts.
+              </p>
+            </div>
+            <Button
+              type="button"
+              className="bg-[var(--color-muted-gold)] text-[var(--color-charcoal)] hover:bg-white"
+              onClick={() => enterTraveler('/traveler/predict/trip-amd-goa')}
+            >
+              Open emergency forecast
+            </Button>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {uspFrameworks.map((item) => (
+              <div key={item.name} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">{item.family}</p>
+                <p className="mt-2 font-display text-xl">{item.name}</p>
+                <p className="mt-2 text-[13px] leading-relaxed text-white/70">{item.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -398,6 +484,7 @@ export function Landing() {
             title="Product"
             links={[
               { label: 'Product', href: '#intelligence' },
+              { label: 'Predictive USP', href: '#usp' },
               { label: 'How it works', href: '#how' },
               { label: 'Features', href: '#features' },
             ]}

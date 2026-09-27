@@ -88,7 +88,7 @@ export interface TwinSnapshot {
   generatedAt: string
 }
 
-const OUTDOOR = /beach|baga|water|trek|outdoor|parasail|jet.?ski|fort|hike|swim|snorkel/i
+const OUTDOOR = /beach|baga|water|trek|outdoor|parasail|jet.?ski|fort|hike|swim|snorkel|gondola|dal|shikara|gulmarg|pahalgam|raft|viewpoint|garden|meadow/i
 
 export function isOutdoorNode(node: TripNode): boolean {
   return node.category === 'activity' && OUTDOOR.test(`${node.title} ${node.notes} ${node.city}`)

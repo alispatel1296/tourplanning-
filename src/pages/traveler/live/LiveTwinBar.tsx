@@ -48,6 +48,9 @@ export function LiveTwinBar({ trip }: { trip: Trip }) {
           <Button type="button" size="sm" className="bg-sky-500 text-slate-950 hover:bg-sky-400" onClick={() => navigate(`/traveler/twin/${trip.id}`)}>
             Open twin studio
           </Button>
+          <Button type="button" size="sm" className="bg-rose-400 text-slate-950 hover:bg-rose-300" onClick={() => navigate(`/traveler/predict/${trip.id}`)}>
+            Emergency forecast
+          </Button>
         </div>
       </div>
       {snapshot.whatIf ? (

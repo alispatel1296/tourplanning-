@@ -46,7 +46,7 @@ function minutesUntil(node?: TripNode) {
   const target = new Date()
   target.setHours(h, m || 0, 0, 0)
   const diff = Math.round((target.getTime() - now.getTime()) / 60000)
-  return diff >= 0 ? diff : diff + 24 * 60
+  return diff >= 0 ? diff : Math.min(diff + 24 * 60, 18 * 60)
 }
 
 export function forecastEmergency(trip: Trip, snapshot: TwinSnapshot): EmergencyForecast {

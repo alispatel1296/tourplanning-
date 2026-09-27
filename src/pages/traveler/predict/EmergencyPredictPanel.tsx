@@ -34,7 +34,7 @@ export function EmergencyPredictPanel({
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Stat icon={<ShieldAlert className="h-4 w-4" />} label="P(emergency)" value={`${Math.round(forecast.pEmergency * 100)}%`} hint={`${forecast.triggerCity} · ${forecast.triggerTitle}`} />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Lead time" value={`${forecast.leadMinutes} min`} hint="Until the stressed hop" />
+          <Stat icon={<Clock className="h-4 w-4" />} label="Lead time" value={formatLead(forecast.leadMinutes)} hint="Until the stressed hop" />
           <Stat icon={<Waypoints className="h-4 w-4" />} label="Cascade" value={`${forecast.cascadeMinutes} min`} hint={`${Math.round(forecast.pDelay * 100)}% delay risk`} />
           <Stat icon={<Activity className="h-4 w-4" />} label="Confidence" value={`${Math.round(forecast.confidence * 100)}%`} hint={`±${Math.round(forecast.uncertainty * 100)} pts · ~${formatINR(forecast.expectedCost)} if staged`} />
         </div>
@@ -73,6 +73,11 @@ export function EmergencyPredictPanel({
       </Card>
     </div>
   )
+}
+
+function formatLead(minutes: number) {
+  if (minutes >= 180) return `${Math.round(minutes / 60)} h`
+  return `${minutes} min`
 }
 
 function Stat({ icon, label, value, hint }: { icon: ReactNode; label: string; value: string; hint: string }) {

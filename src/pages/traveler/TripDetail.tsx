@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Maximize2, Minus, Plus, Sparkles, Map, Layers, ArrowLeft } from 'lucide-react'
+import { Maximize2, Minus, Plus, ShieldAlert, Sparkles, Map, Layers, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/Feedback'
 import { useAppState } from '@/state/AppState'
@@ -233,6 +233,14 @@ export function TripDetail() {
           >
             {view === 'map' ? <Layers className="h-3.5 w-3.5" /> : <Map className="h-3.5 w-3.5" />}
             <span>{view === 'map' ? 'Canvas View' : 'Map View'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/traveler/predict/${trip.id}`)}
+            className="flex items-center gap-1.5 rounded-xl border border-rose-800/60 bg-rose-950/40 px-3 py-2 text-xs font-bold text-rose-100 hover:border-rose-400"
+          >
+            <ShieldAlert className="h-3.5 w-3.5" />
+            Predict
           </button>
           <button
             type="button"

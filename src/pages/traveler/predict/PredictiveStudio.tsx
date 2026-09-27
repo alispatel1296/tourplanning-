@@ -53,6 +53,16 @@ export function PredictiveStudio() {
       />
 
       {twin.error ? <p className="text-sm text-amber-800">{twin.error}</p> : null}
+
+      <div className="rounded-2xl border border-line bg-white px-5 py-4 text-sm text-slate-600">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-muted-gold)]">How the score is built</p>
+        <p className="mt-2 max-w-3xl">
+          Open-Meteo nowcast and SerpApi social language update a Cox-style outdoor hazard. That shock walks the itinerary
+          DAG so a late trek or swell can slip dinner and the return hop. What-if levers change the twin only. The
+          confidence band widens when feeds are thin.
+        </p>
+      </div>
+
       {forecast ? (
         <EmergencyPredictPanel forecast={forecast} />
       ) : (
